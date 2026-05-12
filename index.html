@@ -150,13 +150,34 @@
     text-transform: uppercase;
     color: var(--gold-dim);
   }
-  .row .val {
-    min-width: 80px;
+  .row .val-input {
+    flex: 0 0 120px;
     text-align: right;
     font-family: 'Cinzel', Georgia, serif;
     color: var(--gold-pale);
     font-size: 14px;
     font-weight: 500;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: 1px dashed var(--gold-dark);
+    padding: 4px 6px;
+    border-radius: 2px;
+    -moz-appearance: textfield;
+  }
+  .row .val-input:hover { border-color: var(--gold-dark); }
+  .row .val-input:focus {
+    outline: none;
+    border-color: var(--gold);
+    background: rgba(168, 132, 47, 0.06);
+  }
+  .row .val-input.invalid {
+    border-color: var(--blood);
+    color: #c25656;
+  }
+  .row .val-input::-webkit-outer-spin-button,
+  .row .val-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
   }
 
   input[type="range"] {
@@ -228,6 +249,55 @@
     box-shadow: inset 0 0 12px rgba(168, 132, 47, 0.15);
   }
 
+  /* Inventory grid */
+  .inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .inv-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 0.85rem 1rem;
+  }
+  .inv-card label {
+    display: block;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold-faint);
+    margin-bottom: 8px;
+  }
+  .inv-card input {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-strong);
+    border-radius: 3px;
+    color: var(--gold-bright);
+    padding: 6px 10px;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 16px;
+    text-align: right;
+    -moz-appearance: textfield;
+  }
+  .inv-card input::-webkit-outer-spin-button,
+  .inv-card input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .inv-card input:focus {
+    outline: none;
+    border-color: var(--gold-deep);
+  }
+  .inv-hint {
+    color: var(--gold-faint);
+    font-size: 13px;
+    font-style: italic;
+    margin: 0 0 12px;
+  }
+
   /* Headline */
   .headline {
     background:
@@ -284,6 +354,7 @@
     border-radius: 4px;
     padding: 0.95rem 1.1rem;
   }
+  .stat-card.savings { border-color: var(--gold-deep); }
   .stat-label {
     font-family: 'Cinzel', Georgia, serif;
     font-size: 10px;
@@ -297,6 +368,13 @@
     font-size: 20px;
     color: var(--gold-bright);
     font-weight: 500;
+  }
+  .stat-sub {
+    margin-top: 4px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    color: var(--gold-faint);
+    font-style: italic;
   }
 
   /* Share area */
@@ -395,6 +473,7 @@
     .row { flex-wrap: wrap; }
     .row label { flex: 0 0 100%; margin-bottom: 4px; }
     .row input[type="range"] { flex: 1 1 auto; min-width: 0; }
+    .row .val-input { flex: 0 0 90px; }
     .headline-val { font-size: 26px; }
     .headline { padding: 1.25rem; }
   }
@@ -414,22 +493,22 @@
     <div class="row">
       <label>Prestige goal</label>
       <input type="range" id="goal" min="100000" max="10000000" step="50000" value="3000000" />
-      <span class="val" id="goal-out">3,000,000</span>
+      <input type="text" inputmode="numeric" class="val-input" id="goal-out" data-field="goal" />
     </div>
     <div class="row">
       <label>Prestige per march</label>
       <input type="range" id="prestige" min="1000" max="15000" step="100" value="5200" />
-      <span class="val" id="prestige-out">5,200</span>
+      <input type="text" inputmode="numeric" class="val-input" id="prestige-out" data-field="prestige" />
     </div>
     <div class="row">
       <label>Marches per kill</label>
       <input type="range" id="marches-kill" min="1" max="5" step="1" value="5" />
-      <span class="val" id="marches-kill-out">5</span>
+      <input type="text" inputmode="numeric" class="val-input" id="marches-kill-out" data-field="marchesKill" />
     </div>
     <div class="row">
       <label>Stamina per march</label>
       <input type="range" id="stamina-march" min="5" max="25" step="5" value="25" />
-      <span class="val" id="stamina-march-out">25</span>
+      <input type="text" inputmode="numeric" class="val-input" id="stamina-march-out" data-field="stamMarch" />
     </div>
 
     <div class="divider"></div>
@@ -438,7 +517,29 @@
     <div class="radio-group" id="pack-group">
       <div class="radio-opt active" data-pack="standard" data-gold="700" data-stam="100">700 gold · 100 stam</div>
       <div class="radio-opt" data-pack="small" data-gold="400" data-stam="50">400 gold · 50 stam</div>
-      <div class="radio-opt" data-pack="external" data-gold="0" data-stam="100">External pack (free)</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>Your Stamina Packs</h2>
+    <p class="inv-hint">Quest-earned packs you already own. These are spent before any gold pack is purchased.</p>
+    <div class="inventory-grid">
+      <div class="inv-card">
+        <label>100-stamina packs</label>
+        <input type="text" inputmode="numeric" id="inv-100" data-inv="100" value="0" />
+      </div>
+      <div class="inv-card">
+        <label>50-stamina packs</label>
+        <input type="text" inputmode="numeric" id="inv-50" data-inv="50" value="0" />
+      </div>
+      <div class="inv-card">
+        <label>25-stamina packs</label>
+        <input type="text" inputmode="numeric" id="inv-25" data-inv="25" value="0" />
+      </div>
+      <div class="inv-card">
+        <label>10-stamina packs</label>
+        <input type="text" inputmode="numeric" id="inv-10" data-inv="10" value="0" />
+      </div>
     </div>
 
     <div class="divider"></div>
@@ -451,12 +552,12 @@
     <div class="row dragon-row">
       <label>Marches per revive</label>
       <input type="range" id="dragon-marches" min="1" max="30" step="1" value="6" />
-      <span class="val" id="dragon-marches-out">6</span>
+      <input type="text" inputmode="numeric" class="val-input" id="dragon-marches-out" data-field="dragonMarches" />
     </div>
     <div class="row dragon-row">
       <label>Revive cost</label>
       <input type="range" id="revive" min="0" max="2000" step="1" value="742" />
-      <span class="val" id="revive-out">742</span>
+      <input type="text" inputmode="numeric" class="val-input" id="revive-out" data-field="revive" />
     </div>
 
     <div class="divider"></div>
@@ -482,6 +583,11 @@
         <div class="stat-val" id="stamina-total">—</div>
       </div>
       <div class="stat-card">
+        <div class="stat-label">Stamina from inventory</div>
+        <div class="stat-val" id="stam-from-inv">—</div>
+        <div class="stat-sub" id="stam-from-inv-sub"></div>
+      </div>
+      <div class="stat-card">
         <div class="stat-label">Stamina gold</div>
         <div class="stat-val" id="stamina-gold">—</div>
       </div>
@@ -492,6 +598,10 @@
       <div class="stat-card">
         <div class="stat-label">Revive gold</div>
         <div class="stat-val" id="revive-gold">—</div>
+      </div>
+      <div class="stat-card savings">
+        <div class="stat-label">Gold saved by packs</div>
+        <div class="stat-val" id="gold-saved">—</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">Gold per 1k prestige</div>
@@ -506,13 +616,13 @@
     </div>
 
     <div class="footnote">
-      Marches are rounded up to whole kills, for what use is half a slain beast? Dragon revives are tallied each time the beast completes its march cycle. The "external pack" option treats stamina as already paid, isolating the cost of dragon revives alone.
+      Marches are rounded up to whole kills, for what use is half a slain beast? Dragon revives are tallied each time the beast completes its march cycle. Owned stamina packs are spent largest-first against the total stamina needed; whatever remains is bought from the selected gold pack.
     </div>
 
   </div>
 
   <footer>
-    <p>Forged in fire &amp; vanilla JavaScript · <a href="https://github.com/" target="_blank" rel="noopener">view source</a></p>
+    <p>Forged in fire &amp; vanilla JavaScript · <a href="https://github.com/macaugh/gotc-companion" target="_blank" rel="noopener">view source</a></p>
   </footer>
 
 </div>
@@ -532,10 +642,41 @@
     packStam: 100,
     useDragon: true,
     dragonMarches: 6,
-    revive: 742
+    revive: 742,
+    inv100: 0,
+    inv50: 0,
+    inv25: 0,
+    inv10: 0
   };
 
-  // Map of URL param keys to state
+  // Slider config: keep min/max for slider; typed input may exceed.
+  const SLIDERS = {
+    goal:          { min: 100000, max: 10000000, step: 50000, integer: true },
+    prestige:      { min: 1000,   max: 15000,    step: 100,   integer: true },
+    marchesKill:   { min: 1,      max: 5,        step: 1,     integer: true },
+    stamMarch:     { min: 5,      max: 25,       step: 5,     integer: true },
+    dragonMarches: { min: 1,      max: 30,       step: 1,     integer: true },
+    revive:        { min: 0,      max: 2000,     step: 1,     integer: true }
+  };
+
+  const SLIDER_ID = {
+    goal: 'goal',
+    prestige: 'prestige',
+    marchesKill: 'marches-kill',
+    stamMarch: 'stamina-march',
+    dragonMarches: 'dragon-marches',
+    revive: 'revive'
+  };
+
+  const OUT_ID = {
+    goal: 'goal-out',
+    prestige: 'prestige-out',
+    marchesKill: 'marches-kill-out',
+    stamMarch: 'stamina-march-out',
+    dragonMarches: 'dragon-marches-out',
+    revive: 'revive-out'
+  };
+
   const URL_KEYS = {
     goal: 'goal',
     pres: 'prestige',
@@ -544,46 +685,69 @@
     pack: 'pack',
     dragon: 'useDragon',
     dm: 'dragonMarches',
-    rev: 'revive'
+    rev: 'revive',
+    i100: 'inv100',
+    i50: 'inv50',
+    i25: 'inv25',
+    i10: 'inv10'
   };
 
-  // Pack definitions
   const PACKS = {
     standard: { gold: 700, stam: 100 },
-    small: { gold: 400, stam: 50 },
-    external: { gold: 0, stam: 100 }
+    small: { gold: 400, stam: 50 }
   };
 
-  // Parse URL params on load
+  // Parse a typed string into a number; allows commas. Returns null if invalid.
+  function parseTyped(raw, integer) {
+    if (raw == null) return null;
+    const cleaned = String(raw).replace(/[,\s]/g, '');
+    if (cleaned === '' || cleaned === '-') return null;
+    const n = integer ? parseInt(cleaned, 10) : parseFloat(cleaned);
+    if (isNaN(n)) return null;
+    return n;
+  }
+
+  function clampForSlider(field, value) {
+    const cfg = SLIDERS[field];
+    if (!cfg) return value;
+    return Math.max(cfg.min, Math.min(cfg.max, value));
+  }
+
   function loadFromUrl() {
     const params = new URLSearchParams(window.location.search);
     for (const [urlKey, stateKey] of Object.entries(URL_KEYS)) {
-      if (params.has(urlKey)) {
-        const raw = params.get(urlKey);
-        if (stateKey === 'pack') {
-          if (PACKS[raw]) {
-            state.pack = raw;
-            state.packGold = PACKS[raw].gold;
-            state.packStam = PACKS[raw].stam;
-          }
-        } else if (stateKey === 'useDragon') {
-          state.useDragon = raw === '1' || raw === 'true';
-        } else {
-          const num = parseInt(raw, 10);
-          if (!isNaN(num)) state[stateKey] = num;
+      if (!params.has(urlKey)) continue;
+      const raw = params.get(urlKey);
+      if (stateKey === 'pack') {
+        if (PACKS[raw]) {
+          state.pack = raw;
+          state.packGold = PACKS[raw].gold;
+          state.packStam = PACKS[raw].stam;
         }
+      } else if (stateKey === 'useDragon') {
+        state.useDragon = raw === '1' || raw === 'true';
+      } else {
+        const num = parseInt(raw, 10);
+        if (!isNaN(num) && num >= 0) state[stateKey] = num;
       }
     }
   }
 
-  // Apply state to DOM controls
+  // Push current state into all controls (sliders, text inputs, radios).
   function applyToDom() {
-    document.getElementById('goal').value = state.goal;
-    document.getElementById('prestige').value = state.prestige;
-    document.getElementById('marches-kill').value = state.marchesKill;
-    document.getElementById('stamina-march').value = state.stamMarch;
-    document.getElementById('dragon-marches').value = state.dragonMarches;
-    document.getElementById('revive').value = state.revive;
+    for (const field of Object.keys(SLIDERS)) {
+      const slider = document.getElementById(SLIDER_ID[field]);
+      const out = document.getElementById(OUT_ID[field]);
+      slider.value = clampForSlider(field, state[field]);
+      // Only overwrite the text input if it's not currently being edited.
+      if (document.activeElement !== out) {
+        out.value = SLIDERS[field].integer ? fmt(state[field]) : state[field];
+      }
+    }
+    document.getElementById('inv-100').value = state.inv100;
+    document.getElementById('inv-50').value = state.inv50;
+    document.getElementById('inv-25').value = state.inv25;
+    document.getElementById('inv-10').value = state.inv10;
 
     document.querySelectorAll('#pack-group .radio-opt').forEach(o => {
       o.classList.toggle('active', o.dataset.pack === state.pack);
@@ -594,17 +758,6 @@
     wrap.classList.toggle('dragon-disabled', !state.useDragon);
   }
 
-  // Read state from DOM (for slider changes)
-  function readFromDom() {
-    state.goal = +document.getElementById('goal').value;
-    state.prestige = +document.getElementById('prestige').value;
-    state.marchesKill = +document.getElementById('marches-kill').value;
-    state.stamMarch = +document.getElementById('stamina-march').value;
-    state.dragonMarches = +document.getElementById('dragon-marches').value;
-    state.revive = +document.getElementById('revive').value;
-  }
-
-  // Build shareable URL
   function buildUrl() {
     const params = new URLSearchParams();
     params.set('goal', state.goal);
@@ -615,33 +768,54 @@
     params.set('dragon', state.useDragon ? '1' : '0');
     params.set('dm', state.dragonMarches);
     params.set('rev', state.revive);
-    const base = window.location.origin + window.location.pathname;
-    return base + '?' + params.toString();
+    if (state.inv100) params.set('i100', state.inv100);
+    if (state.inv50)  params.set('i50',  state.inv50);
+    if (state.inv25)  params.set('i25',  state.inv25);
+    if (state.inv10)  params.set('i10',  state.inv10);
+    return window.location.origin + window.location.pathname + '?' + params.toString();
+  }
+
+  // Greedy largest-first consumption without exceeding stamina need.
+  // Returns { used: total stam used, byPack: {100,50,25,10} counts consumed }.
+  function consumeInventory(need) {
+    const sizes = [100, 50, 25, 10];
+    const owned = { 100: state.inv100, 50: state.inv50, 25: state.inv25, 10: state.inv10 };
+    const used = { 100: 0, 50: 0, 25: 0, 10: 0 };
+    let remaining = need;
+    for (const s of sizes) {
+      if (remaining <= 0) break;
+      const fits = Math.floor(remaining / s);
+      const take = Math.min(owned[s], fits);
+      if (take > 0) {
+        used[s] = take;
+        remaining -= take * s;
+      }
+    }
+    // After greedy fit, try one more smallest pack to top up if it doesn't
+    // overshoot the remaining need by too much. Actually for accuracy we don't
+    // top up; the caller buys the remainder from the gold pack.
+    const totalUsed = used[100] * 100 + used[50] * 50 + used[25] * 25 + used[10] * 10;
+    return { used: totalUsed, byPack: used };
   }
 
   function calc() {
-    readFromDom();
-
-    // Readouts
-    document.getElementById('goal-out').textContent = fmt(state.goal);
-    document.getElementById('prestige-out').textContent = fmt(state.prestige);
-    document.getElementById('marches-kill-out').textContent = state.marchesKill;
-    document.getElementById('stamina-march-out').textContent = state.stamMarch;
-    document.getElementById('dragon-marches-out').textContent = state.dragonMarches;
-    document.getElementById('revive-out').textContent = state.revive;
-
-    const rawMarches = Math.ceil(state.goal / state.prestige);
-    const fullKills = Math.ceil(rawMarches / state.marchesKill);
+    const rawMarches = state.prestige > 0 ? Math.ceil(state.goal / state.prestige) : 0;
+    const fullKills = state.marchesKill > 0 ? Math.ceil(rawMarches / state.marchesKill) : 0;
     const marches = fullKills * state.marchesKill;
 
     const stamina = marches * state.stamMarch;
-    const stamGold = state.packStam > 0 ? (stamina / state.packStam) * state.packGold : 0;
+
+    const inv = consumeInventory(stamina);
+    const stamFromGold = Math.max(0, stamina - inv.used);
+    const stamGold = (stamFromGold / state.packStam) * state.packGold;
+    const stamGoldNoInv = (stamina / state.packStam) * state.packGold;
+    const goldSaved = Math.max(0, stamGoldNoInv - stamGold);
 
     const revives = state.useDragon ? Math.floor(marches / state.dragonMarches) : 0;
     const reviveGold = revives * state.revive;
 
     const totalGold = stamGold + reviveGold;
-    const efficiency = totalGold / (state.goal / 1000);
+    const efficiency = state.goal > 0 ? totalGold / (state.goal / 1000) : 0;
 
     document.getElementById('total-gold').textContent = fmt(totalGold);
     document.getElementById('total-kills').textContent = fmt(fullKills);
@@ -652,13 +826,79 @@
     document.getElementById('revive-gold').textContent = state.useDragon ? fmt(reviveGold) : '—';
     document.getElementById('efficiency').textContent = efficiency.toFixed(1);
 
-    // Update shareable URL
+    document.getElementById('stam-from-inv').textContent = fmt(inv.used);
+    const breakdownParts = [];
+    if (inv.byPack[100]) breakdownParts.push(inv.byPack[100] + '×100');
+    if (inv.byPack[50])  breakdownParts.push(inv.byPack[50] + '×50');
+    if (inv.byPack[25])  breakdownParts.push(inv.byPack[25] + '×25');
+    if (inv.byPack[10])  breakdownParts.push(inv.byPack[10] + '×10');
+    document.getElementById('stam-from-inv-sub').textContent = breakdownParts.join(' · ');
+    document.getElementById('gold-saved').textContent = fmt(goldSaved);
+
     document.getElementById('share-url').value = buildUrl();
   }
 
-  // Wire sliders
-  ['goal','prestige','marches-kill','stamina-march','dragon-marches','revive'].forEach(id => {
-    document.getElementById(id).addEventListener('input', calc);
+  // Sync the formatted readout into a text input that isn't currently focused.
+  function refreshOut(field) {
+    const out = document.getElementById(OUT_ID[field]);
+    if (document.activeElement !== out) {
+      out.value = SLIDERS[field].integer ? fmt(state[field]) : state[field];
+    }
+  }
+
+  // Wire sliders → state → recalc
+  for (const field of Object.keys(SLIDERS)) {
+    const slider = document.getElementById(SLIDER_ID[field]);
+    slider.addEventListener('input', () => {
+      state[field] = +slider.value;
+      refreshOut(field);
+      calc();
+    });
+  }
+
+  // Wire text inputs (value readouts) → state → recalc
+  document.querySelectorAll('.val-input').forEach(input => {
+    const field = input.dataset.field;
+    const cfg = SLIDERS[field];
+
+    input.addEventListener('input', () => {
+      const parsed = parseTyped(input.value, cfg.integer);
+      if (parsed === null || parsed < 0) {
+        input.classList.add('invalid');
+        return;
+      }
+      input.classList.remove('invalid');
+      state[field] = parsed;
+      // Sync slider (clamped). Typed value may exceed slider max.
+      document.getElementById(SLIDER_ID[field]).value = clampForSlider(field, parsed);
+      calc();
+    });
+
+    // On blur, reformat the text (e.g. add commas) and clear invalid state.
+    input.addEventListener('blur', () => {
+      input.classList.remove('invalid');
+      input.value = cfg.integer ? fmt(state[field]) : state[field];
+    });
+  });
+
+  // Wire inventory inputs
+  document.querySelectorAll('[data-inv]').forEach(input => {
+    const size = +input.dataset.inv;
+    const key = 'inv' + size;
+    input.addEventListener('input', () => {
+      const parsed = parseTyped(input.value, true);
+      if (parsed === null || parsed < 0) {
+        input.style.borderColor = 'var(--blood)';
+        return;
+      }
+      input.style.borderColor = '';
+      state[key] = parsed;
+      calc();
+    });
+    input.addEventListener('blur', () => {
+      input.style.borderColor = '';
+      input.value = state[key];
+    });
   });
 
   // Wire pack radios
@@ -691,7 +931,6 @@
     try {
       await navigator.clipboard.writeText(url);
     } catch (e) {
-      // Fallback for older browsers
       const input = document.getElementById('share-url');
       input.select();
       document.execCommand('copy');

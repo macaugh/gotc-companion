@@ -27,7 +27,14 @@ All inputs are live sliders — adjust any input and every number updates immedi
 **Stamina pack** (radio)
 - 700 gold for 100 stamina (standard)
 - 400 gold for 50 stamina (small)
-- External pack (free) — for modeling cost when stamina comes from another source
+
+**Your stamina pack inventory** (number inputs)
+- 100-stamina packs owned
+- 50-stamina packs owned
+- 25-stamina packs owned
+- 10-stamina packs owned
+
+Inventory is spent largest-first against the total stamina needed; any remainder is bought from the selected gold pack.
 
 **Dragon** (radio)
 - Use dragon or no dragon
@@ -71,10 +78,14 @@ The calculator encodes all inputs into URL parameters, so you can share a link t
 | `pres`   | Prestige per march   | `pres=5200`   |
 | `mk`     | Marches per kill     | `mk=5`        |
 | `sm`     | Stamina per march    | `sm=25`       |
-| `pack`   | Stamina pack         | `pack=standard` / `pack=small` / `pack=external` |
+| `pack`   | Stamina pack         | `pack=standard` / `pack=small` |
 | `dragon` | Use dragon           | `dragon=1` / `dragon=0` |
 | `dm`     | Marches per revive   | `dm=6`        |
 | `rev`    | Revive cost in gold  | `rev=742`     |
+| `i100`   | 100-stam packs owned | `i100=50`     |
+| `i50`    | 50-stam packs owned  | `i50=20`      |
+| `i25`    | 25-stam packs owned  | `i25=10`      |
+| `i10`    | 10-stam packs owned  | `i10=5`       |
 
 ### Example shareable links
 
@@ -83,9 +94,9 @@ The calculator encodes all inputs into URL parameters, so you can share a link t
 ?goal=3000000&pres=5200&mk=5&sm=25&pack=standard&dragon=1&dm=6&rev=742
 ```
 
-Same goal but stamina comes from external packs (dragon-only cost):
+Same goal with 50× 100-stam and 20× 50-stam packs in your inventory:
 ```
-?goal=3000000&pres=5200&mk=5&sm=25&pack=external&dragon=1&dm=6&rev=742
+?goal=3000000&pres=5200&mk=5&sm=25&pack=standard&dragon=1&dm=6&rev=742&i100=50&i50=20
 ```
 
 5 million prestige, no dragon, small pack:
@@ -108,8 +119,7 @@ The defaults are tuned for the current level-35 monster event, but every input i
 ```javascript
 const PACKS = {
   standard: { gold: 700, stam: 100 },
-  small:    { gold: 400, stam: 50 },
-  external: { gold: 0,   stam: 100 }
+  small:    { gold: 400, stam: 50 }
 };
 ```
 
