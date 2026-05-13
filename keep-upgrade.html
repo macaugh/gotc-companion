@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Night's Watch: The Builders — GoT Conquest Calculator</title>
+<meta name="description" content="A calculator for the resource and time cost of upgrading your Keep in Game of Thrones: Conquest.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="page">
+
+  <nav class="nav">
+    <a href="index.html">Prestige Ledger</a>
+    <a href="keep-upgrade.html" class="current">Night's Watch: The Builders</a>
+  </nav>
+
+  <div class="crest">⚔ ✦ ⚔</div>
+  <h1 class="title">Night's Watch: The Builders</h1>
+  <p class="subtitle">Brothers of the Wall reckon the stones of a Keep</p>
+
+  <div class="panel" id="wrap">
+
+    <h2>Goal &amp; Target</h2>
+    <div class="row">
+      <label>Current keep level</label>
+      <input type="text" inputmode="numeric" class="val-input" id="ck-out" data-field="currentKeep" value="15" style="flex: 1 1 auto;" />
+    </div>
+    <div class="row">
+      <label>Target keep level</label>
+      <input type="text" inputmode="numeric" class="val-input" id="tk-out" data-field="targetKeep" value="17" style="flex: 1 1 auto;" />
+    </div>
+    <p class="error-text" id="goal-error" hidden>Target must be ≥ current.</p>
+
+    <div class="divider"></div>
+
+    <h2>Current Building Levels</h2>
+    <p class="inv-hint">Each defaults to current keep level − 1 (i.e. fully built for your current keep). Adjust only the buildings you've fallen behind on.</p>
+    <div class="inventory-grid" id="buildings-grid"></div>
+
+    <div class="divider"></div>
+
+    <h2>Construction Cost Reduction</h2>
+    <div class="bonus-apply-all">
+      <label>Apply to all (%)</label>
+      <input type="text" inputmode="numeric" id="bonus-apply-all" placeholder="0" />
+    </div>
+    <div class="bonus-grid" id="bonus-grid"></div>
+
+    <div class="divider"></div>
+
+    <h2>Construction Time Reduction</h2>
+    <div class="row">
+      <label>Time reduction (%)</label>
+      <input type="text" inputmode="numeric" class="val-input" id="tr-out" data-field="timeReductionPct" value="0" style="flex: 1 1 auto;" />
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>Totals</h2>
+    <div class="stats-grid" id="totals-grid"></div>
+
+    <details class="breakdown" id="breakdown">
+      <summary>Per-building breakdown</summary>
+      <div id="breakdown-body"></div>
+    </details>
+
+    <div class="share">
+      <span class="share-label">Shareable link</span>
+      <input type="text" id="share-url" readonly />
+      <button id="copy-btn" type="button">Copy</button>
+    </div>
+
+    <div class="footnote">
+      Resource bonuses apply per resource; time bonus is separate. Rows shown in red indicate cost data not yet transcribed.
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Forged in fire &amp; vanilla JavaScript · <a href="https://github.com/macaugh/gotc-companion" target="_blank" rel="noopener">view source</a></p>
+  </footer>
+
+</div>
+
+<script src="keep-calc.js"></script>
+<script src="keep-data.js"></script>
+<script src="keep-upgrade.js"></script>
+</body>
+</html>

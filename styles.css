@@ -498,3 +498,84 @@
     color: var(--gold-bright);
     border-bottom-color: var(--gold-deep);
   }
+}
+
+/* Builder-specific */
+.bonus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.breakdown {
+  margin-top: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+}
+.breakdown summary {
+  cursor: pointer;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  list-style: none;
+}
+.breakdown summary::-webkit-details-marker { display: none; }
+.breakdown summary::before { content: "▸  "; color: var(--gold-dark); }
+.breakdown[open] summary::before { content: "▾  "; }
+.breakdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+}
+.breakdown th, .breakdown td {
+  padding: 6px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.breakdown th {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  text-align: right;
+}
+.breakdown th:first-child, .breakdown td:first-child,
+.breakdown th:nth-child(2), .breakdown td:nth-child(2) { text-align: left; }
+.breakdown tr.missing td { color: var(--blood); font-style: italic; }
+.error-text { color: #c25656; font-style: italic; font-size: 13px; margin: 6px 0 0; }
+.bonus-apply-all {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+}
+.bonus-apply-all label {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  flex: 0 0 auto;
+}
+.bonus-apply-all input {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  color: var(--gold-bright);
+  padding: 6px 10px;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 14px;
+  text-align: right;
+  width: 100px;
+}
