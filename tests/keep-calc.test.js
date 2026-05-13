@@ -79,3 +79,48 @@ test('emits prereq building upgrades, skipping buildings already at or above req
     ['Keep 17', 'Wall 15', 'Wall 16']);
   assert.equal(plan.totalsBeforeBonus.wood, 1000 + 100 + 200);
 });
+
+test('applies per-resource bonus and time reduction', () => {
+  const costs = {
+    Keep: { 17: { wood: 1000, food: 800, stone: 0, iron: 0,
+                  brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 100 } },
+  };
+  const plan = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17,
+    currentBuildingLevels: {},
+    bonusPctByResource: { wood: 0.5, food: 0.25 },
+    timeReductionPct: 0.10,
+    costs,
+    prereqs: { 17: {} },
+  });
+  assert.equal(plan.totalsBeforeBonus.wood, 1000);
+  assert.equal(plan.totals.wood, 500);
+  assert.equal(plan.totals.food, 600);
+  assert.equal(plan.totals.hours, 90);
+});
+
+test('flags rows with missing cost data and contributes zero', () => {
+  const costs = { Keep: {} }; // no level data
+  const plan = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17,
+    currentBuildingLevels: {}, bonusPctByResource: {}, timeReductionPct: 0,
+    costs, prereqs: { 17: {} },
+  });
+  assert.equal(plan.rows.length, 1);
+  assert.equal(plan.rows[0].missing, true);
+  assert.equal(plan.totalsBeforeBonus.wood, 0);
+});
+
+test('clamps bonus inputs outside 0..1', () => {
+  const costs = { Keep: { 17: { wood: 1000, food: 0, stone: 0, iron: 0,
+                                brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 0 } } };
+  const plan = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17,
+    currentBuildingLevels: {},
+    bonusPctByResource: { wood: 1.5 }, // 150% clamps to 100% → totals.wood = 0
+    timeReductionPct: -0.2,            // negative clamps to 0
+    costs, prereqs: { 17: {} },
+  });
+  assert.equal(plan.totals.wood, 0);
+  assert.equal(plan.totals.hours, 0);
+});
