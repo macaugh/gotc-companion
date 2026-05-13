@@ -489,6 +489,11 @@
     color: var(--gold);
     border-bottom-color: var(--gold-dark);
   }
+  .nav a:focus-visible {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 2px;
+    color: var(--gold);
+  }
   .nav a.current {
     color: var(--gold-bright);
     border-bottom-color: var(--gold-deep);
