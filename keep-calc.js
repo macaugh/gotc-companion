@@ -52,6 +52,15 @@
 
     for (let k = currentKeep + 1; k <= targetKeep; k++) {
       emitRow('Keep', k - 1, k);
+      const req = prereqs[k] || {};
+      for (const building of Object.keys(req)) {
+        const required = req[building];
+        const have = levels[building] != null ? levels[building] : 0;
+        for (let lvl = have + 1; lvl <= required; lvl++) {
+          emitRow(building, lvl - 1, lvl);
+        }
+        if (required > have) levels[building] = required;
+      }
     }
 
     for (const r of RESOURCE_KEYS) {
