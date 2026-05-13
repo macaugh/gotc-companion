@@ -11,8 +11,10 @@ test('returns empty plan with zero totals when targetKeep <= currentKeep', () =>
     currentKeep: 17,
     targetKeep: 17,
     currentBuildingLevels: {},
-    bonusPctByResource: {},
-    timeReductionPct: 0,
+    efficiencyByCategory: {},
+    constructionSpeedPct: 0,
+    freeBuildTimeHours: 0,
+    flatWoodReduction: 0,
     costs: COSTS,
     prereqs: PREREQS,
   });
@@ -35,8 +37,10 @@ test('produces a single row for one-level keep upgrade with empty prereqs', () =
     currentKeep: 16,
     targetKeep: 17,
     currentBuildingLevels: {},
-    bonusPctByResource: {},
-    timeReductionPct: 0,
+    efficiencyByCategory: {},
+    constructionSpeedPct: 0,
+    freeBuildTimeHours: 0,
+    flatWoodReduction: 0,
     costs,
     prereqs,
   });
@@ -67,8 +71,10 @@ test('emits prereq building upgrades, skipping buildings already at or above req
     currentKeep: 16,
     targetKeep: 17,
     currentBuildingLevels: { Wall: 14, Rookery: 16 }, // Rookery already maxed
-    bonusPctByResource: {},
-    timeReductionPct: 0,
+    efficiencyByCategory: {},
+    constructionSpeedPct: 0,
+    freeBuildTimeHours: 0,
+    flatWoodReduction: 0,
     costs,
     prereqs,
   });
@@ -80,30 +86,41 @@ test('emits prereq building upgrades, skipping buildings already at or above req
   assert.equal(plan.totalsBeforeBonus.wood, 1000 + 100 + 200);
 });
 
-test('applies per-resource bonus and time reduction', () => {
+test('applies per-category efficiency divisor and construction-speed time divisor', () => {
   const costs = {
     Keep: { 17: { wood: 1000, food: 800, stone: 0, iron: 0,
-                  brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 100 } },
+                  brick: 0, pine: 200, keystone: 100, valyrian: 50, hours: 100 } },
   };
   const plan = computeUpgradePlan({
     currentKeep: 16, targetKeep: 17,
     currentBuildingLevels: {},
-    bonusPctByResource: { wood: 0.5, food: 0.25 },
-    timeReductionPct: 0.10,
+    efficiencyByCategory: { resource: 0.029, pine: 0.5, keystone: 1.0, valyrian: 0 },
+    constructionSpeedPct: 6.52271,
     costs,
     prereqs: { 17: {} },
   });
-  assert.equal(plan.totalsBeforeBonus.wood, 1000);
-  assert.equal(plan.totals.wood, 500);
-  assert.equal(plan.totals.food, 600);
-  assert.equal(plan.totals.hours, 90);
+  // basic resources share 'resource' category at +2.9% → divide by 1.029
+  assert.ok(Math.abs(plan.totals.wood - (1000 / 1.029)) < 0.001);
+  assert.ok(Math.abs(plan.totals.food - (800 / 1.029)) < 0.001);
+  // pine +50% → divide by 1.5
+  assert.ok(Math.abs(plan.totals.pine - (200 / 1.5)) < 0.001);
+  // keystone +100% → divide by 2.0
+  assert.ok(Math.abs(plan.totals.keystone - 50) < 0.001);
+  // valyrian unbonused
+  assert.equal(plan.totals.valyrian, 50);
+  // time: 100 / (1 + 6.52271) ≈ 13.293
+  assert.ok(Math.abs(plan.totals.hours - (100 / 7.52271)) < 0.001);
 });
 
 test('flags rows with missing cost data and contributes zero', () => {
   const costs = { Keep: {} }; // no level data
   const plan = computeUpgradePlan({
     currentKeep: 16, targetKeep: 17,
-    currentBuildingLevels: {}, bonusPctByResource: {}, timeReductionPct: 0,
+    currentBuildingLevels: {},
+    efficiencyByCategory: {},
+    constructionSpeedPct: 0,
+    freeBuildTimeHours: 0,
+    flatWoodReduction: 0,
     costs, prereqs: { 17: {} },
   });
   assert.equal(plan.rows.length, 1);
@@ -111,14 +128,120 @@ test('flags rows with missing cost data and contributes zero', () => {
   assert.equal(plan.totalsBeforeBonus.wood, 0);
 });
 
-test('clamps bonus inputs outside 0..1', () => {
+test('applies flat wood reduction after percentage and floors at zero', () => {
+  const costs = { Keep: { 17: { wood: 1_000_000, food: 0, stone: 0, iron: 0,
+                                brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 0 } } };
+  const plan = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17, currentBuildingLevels: {},
+    efficiencyByCategory: { resource: 1.0 },  // halves wood
+    flatWoodReduction: 100_000,
+    costs, prereqs: { 17: {} },
+  });
+  // 1,000,000 / 2 - 100,000 = 400,000
+  assert.equal(plan.totals.wood, 400_000);
+});
+
+test('flat wood reduction larger than wood floors at zero', () => {
+  const costs = { Keep: { 17: { wood: 500, food: 0, stone: 0, iron: 0,
+                                brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 0 } } };
+  const plan = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17, currentBuildingLevels: {},
+    flatWoodReduction: 10_000,
+    costs, prereqs: { 17: {} },
+  });
+  assert.equal(plan.totals.wood, 0);
+});
+
+test('free build time subtracts and floors at zero', () => {
+  const costs = { Keep: { 17: { wood: 0, food: 0, stone: 0, iron: 0,
+                                brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 5 } } };
+  const plan = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17, currentBuildingLevels: {},
+    constructionSpeedPct: 1.0,        // halves time → 2.5
+    freeBuildTimeHours: 1.0,          // subtract 1 → 1.5
+    costs, prereqs: { 17: {} },
+  });
+  assert.ok(Math.abs(plan.totals.hours - 1.5) < 0.001);
+
+  // And once more with huge free build time → floor at zero
+  const plan2 = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17, currentBuildingLevels: {},
+    freeBuildTimeHours: 100,
+    costs, prereqs: { 17: {} },
+  });
+  assert.equal(plan2.totals.hours, 0);
+});
+
+test('negative efficiency / speed / free build time inputs are clamped at zero', () => {
+  const costs = { Keep: { 17: { wood: 1000, food: 0, stone: 0, iron: 0,
+                                brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 10 } } };
+  const plan = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17, currentBuildingLevels: {},
+    efficiencyByCategory: { resource: -0.5 },
+    constructionSpeedPct: -1,
+    freeBuildTimeHours: -5,
+    flatWoodReduction: -100,
+    costs, prereqs: { 17: {} },
+  });
+  assert.equal(plan.totals.wood, 1000);   // efficiency clamped to 0 → no change
+  assert.equal(plan.totals.hours, 10);    // speed clamped to 0, free time clamped to 0
+});
+
+test('applies flat wood reduction after wood efficiency', () => {
   const costs = { Keep: { 17: { wood: 1000, food: 0, stone: 0, iron: 0,
                                 brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 0 } } };
+
+  // No efficiency, flat reduction of 250
+  const plan1 = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17,
+    currentBuildingLevels: {},
+    efficiencyByCategory: { resource: 0 },
+    constructionSpeedPct: 0,
+    freeBuildTimeHours: 0,
+    flatWoodReduction: 250,
+    costs, prereqs: { 17: {} },
+  });
+  assert.equal(plan1.totals.wood, 750);  // 1000 - 250
+
+  // resource efficiency = 1.0 (divide by 2), then flat reduction 250
+  const plan2 = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17,
+    currentBuildingLevels: {},
+    efficiencyByCategory: { resource: 1.0 },
+    constructionSpeedPct: 0,
+    freeBuildTimeHours: 0,
+    flatWoodReduction: 250,
+    costs, prereqs: { 17: {} },
+  });
+  assert.equal(plan2.totals.wood, 250);  // 1000 / 2 - 250 = 250
+});
+
+test('applies free build time after speed divisor', () => {
+  const costs = { Keep: { 17: { wood: 0, food: 0, stone: 0, iron: 0,
+                                brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 100 } } };
   const plan = computeUpgradePlan({
     currentKeep: 16, targetKeep: 17,
     currentBuildingLevels: {},
-    bonusPctByResource: { wood: 1.5 }, // 150% clamps to 100% → totals.wood = 0
-    timeReductionPct: -0.2,            // negative clamps to 0
+    efficiencyByCategory: {},
+    constructionSpeedPct: 1.0,      // divide by 2 → 50 hours
+    freeBuildTimeHours: 10,         // then subtract 10 → 40 hours
+    flatWoodReduction: 0,
+    costs, prereqs: { 17: {} },
+  });
+  assert.equal(plan.totals.hours, 40);  // 100 / 2 - 10 = 40
+});
+
+test('flat reductions floor at zero', () => {
+  const costs = { Keep: { 17: { wood: 100, food: 0, stone: 0, iron: 0,
+                                brick: 0, pine: 0, keystone: 0, valyrian: 0, hours: 100 } } };
+
+  const plan = computeUpgradePlan({
+    currentKeep: 16, targetKeep: 17,
+    currentBuildingLevels: {},
+    efficiencyByCategory: {},
+    constructionSpeedPct: 0,
+    freeBuildTimeHours: 999,   // far exceeds hours — floors at 0
+    flatWoodReduction: 999,    // far exceeds wood — floors at 0
     costs, prereqs: { 17: {} },
   });
   assert.equal(plan.totals.wood, 0);

@@ -579,3 +579,36 @@
   text-align: right;
   width: 100px;
 }
+
+/* Select styled like the val-input text fields */
+.val-select {
+  font-family: 'Cinzel', Georgia, serif;
+  color: var(--gold-pale);
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 1px dashed var(--gold-dark);
+  padding: 4px 6px;
+  border-radius: 2px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--gold-dark) 50%),
+                    linear-gradient(135deg, var(--gold-dark) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 8px) 50%;
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 24px;
+}
+.val-select:hover { border-color: var(--gold-dark); }
+.val-select:focus {
+  outline: none;
+  border-color: var(--gold);
+  background-color: rgba(168, 132, 47, 0.06);
+}
+.val-select option {
+  background: var(--bg-card);
+  color: var(--gold-pale);
+}

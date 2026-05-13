@@ -8,6 +8,12 @@
 }(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const RESOURCE_KEYS = ['wood', 'food', 'stone', 'iron', 'brick', 'pine', 'keystone', 'valyrian'];
 
+  const RESOURCE_TO_CATEGORY = {
+    wood: 'resource', food: 'resource', stone: 'resource',
+    iron: 'resource', brick: 'resource',
+    pine: 'pine', keystone: 'keystone', valyrian: 'valyrian',
+  };
+
   function zeroTotals() {
     const t = { hours: 0 };
     for (const k of RESOURCE_KEYS) t[k] = 0;
@@ -19,8 +25,10 @@
       currentKeep,
       targetKeep,
       currentBuildingLevels = {},
-      bonusPctByResource = {},
-      timeReductionPct = 0,
+      efficiencyByCategory = {},
+      constructionSpeedPct = 0,
+      freeBuildTimeHours = 0,
+      flatWoodReduction = 0,
       costs = {},
       prereqs = {},
     } = input;
@@ -63,12 +71,21 @@
       }
     }
 
+    // Apply efficiency divisors per resource category
     for (const r of RESOURCE_KEYS) {
-      const pct = Math.min(1, Math.max(0, bonusPctByResource[r] || 0));
-      totals[r] = totalsBeforeBonus[r] * (1 - pct);
+      const category = RESOURCE_TO_CATEGORY[r];
+      const eff = Math.max(0, efficiencyByCategory[category] || 0);
+      totals[r] = totalsBeforeBonus[r] / (1 + eff);
     }
-    const tPct = Math.min(1, Math.max(0, timeReductionPct || 0));
-    totals.hours = totalsBeforeBonus.hours * (1 - tPct);
+
+    // Apply flat wood reduction after wood efficiency divisor, floor at zero
+    const flatWood = Math.max(0, flatWoodReduction || 0);
+    totals.wood = Math.max(0, totals.wood - flatWood);
+
+    // Apply construction speed divisor, then subtract free build time, floor at zero
+    const speed = Math.max(0, constructionSpeedPct || 0);
+    const freeHours = Math.max(0, freeBuildTimeHours || 0);
+    totals.hours = Math.max(0, totalsBeforeBonus.hours / (1 + speed) - freeHours);
 
     return { rows, totalsBeforeBonus, totals };
   }
@@ -93,5 +110,5 @@
     return `${minutes}m`;
   }
 
-  return { computeUpgradePlan, RESOURCE_KEYS, formatNumber, formatResource, formatHours };
+  return { computeUpgradePlan, RESOURCE_KEYS, RESOURCE_TO_CATEGORY, formatNumber, formatResource, formatHours };
 }));

@@ -28,11 +28,11 @@
     <h2>Goal &amp; Target</h2>
     <div class="row">
       <label>Current keep level</label>
-      <input type="text" inputmode="numeric" class="val-input" id="ck-out" data-field="currentKeep" value="15" style="flex: 1 1 auto;" />
+      <select class="val-select" id="ck-out" data-field="currentKeep" style="flex: 1 1 auto;"></select>
     </div>
     <div class="row">
       <label>Target keep level</label>
-      <input type="text" inputmode="numeric" class="val-input" id="tk-out" data-field="targetKeep" value="17" style="flex: 1 1 auto;" />
+      <select class="val-select" id="tk-out" data-field="targetKeep" style="flex: 1 1 auto;"></select>
     </div>
     <p class="error-text" id="goal-error" hidden>Target must be ≥ current.</p>
 
@@ -44,19 +44,27 @@
 
     <div class="divider"></div>
 
-    <h2>Construction Cost Reduction</h2>
-    <div class="bonus-apply-all">
-      <label>Apply to all (%)</label>
-      <input type="text" inputmode="numeric" id="bonus-apply-all" placeholder="0" />
+    <h2>Cost Efficiency</h2>
+    <p class="inv-hint">Enter the "Building &hellip; Cost Efficiency" percentages from your in-game House Information &rarr; Stats screen. Values may exceed 100%.</p>
+    <div class="bonus-grid" id="efficiency-grid"></div>
+    <div class="row" style="margin-top: 1rem;">
+      <label>Flat wood reduction</label>
+      <input type="text" inputmode="numeric" class="val-input" id="fw-out" data-field="flatWoodReduction" value="0" style="flex: 1 1 auto;" />
     </div>
-    <div class="bonus-grid" id="bonus-grid"></div>
 
     <div class="divider"></div>
 
-    <h2>Construction Time Reduction</h2>
+    <h2>Construction Time</h2>
     <div class="row">
-      <label>Time reduction (%)</label>
-      <input type="text" inputmode="numeric" class="val-input" id="tr-out" data-field="timeReductionPct" value="0" style="flex: 1 1 auto;" />
+      <label>Construction Speed (%)</label>
+      <input type="text" inputmode="numeric" class="val-input" id="cs-out" data-field="constructionSpeedPct" value="0" style="flex: 1 1 auto;" />
+    </div>
+    <div class="row">
+      <label>Free Build Time</label>
+      <input type="text" inputmode="numeric" class="val-input" id="fbt-h" data-field="freeBuildTimeHoursOnly" value="0" style="flex: 0 0 80px;" />
+      <span style="color: var(--gold-faint); font-family: 'Cinzel', Georgia, serif; font-size: 11px; letter-spacing: 0.15em;">h</span>
+      <input type="text" inputmode="numeric" class="val-input" id="fbt-m" data-field="freeBuildTimeMinutesOnly" value="0" style="flex: 0 0 80px;" />
+      <span style="color: var(--gold-faint); font-family: 'Cinzel', Georgia, serif; font-size: 11px; letter-spacing: 0.15em;">m</span>
     </div>
 
     <div class="divider"></div>
@@ -76,7 +84,7 @@
     </div>
 
     <div class="footnote">
-      Resource bonuses apply per resource; time bonus is separate. Rows shown in red indicate cost data not yet transcribed.
+      Efficiency divisors apply per category; speed and free build time apply to construction time. Rows shown in red indicate cost data not yet transcribed.
     </div>
 
   </div>

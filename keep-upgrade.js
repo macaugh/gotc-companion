@@ -1,16 +1,25 @@
 (function () {
   const RESOURCE_KEYS = globalThis.RESOURCE_KEYS;
-  if (!RESOURCE_KEYS || typeof globalThis.computeUpgradePlan !== 'function') {
+  const RESOURCE_TO_CATEGORY = globalThis.RESOURCE_TO_CATEGORY;
+  if (!RESOURCE_KEYS || !RESOURCE_TO_CATEGORY || typeof globalThis.computeUpgradePlan !== 'function') {
     const grid = document.getElementById('buildings-grid');
     if (grid) {
       grid.innerHTML = '<p class="error-text" style="grid-column:1/-1">Engine failed to load. Reload the page.</p>';
     }
     return;
   }
+
   const RESOURCE_LABELS = {
     wood: 'Wood', food: 'Food', stone: 'Stone', iron: 'Iron',
     brick: 'Brick', pine: 'Pine', keystone: 'Keystone', valyrian: 'Valyrian Stone',
   };
+  const CATEGORY_LABELS = {
+    resource: 'Building Resource Cost Efficiency',
+    pine: 'Building Soldier Pine Cost Efficiency',
+    keystone: 'Building Keystone Cost Efficiency',
+    valyrian: 'Building Valyrian Stone Cost Efficiency',
+  };
+  const CATEGORY_KEYS = ['resource', 'pine', 'keystone', 'valyrian'];
   const KEEP_MIN = 10;
   const KEEP_MAX = 40;
 
@@ -18,10 +27,14 @@
     currentKeep: 15,
     targetKeep: 17,
     buildingLevels: {},
-    bonusPctByResource: {},
-    timeReductionPct: 0,
+    efficiencyByCategory: { resource: 0, pine: 0, keystone: 0, valyrian: 0 },
+    constructionSpeedPct: 0,
+    freeBuildTimeHours: 0,         // decimal — combined h + m/60
+    flatWoodReduction: 0,
     defaultBuildingLevel: null,
   };
+  // UI-only split storage for the h + m inputs.
+  const fbtUi = { hours: 0, minutes: 0 };
 
   function buildingsFromPrereqs() {
     const set = new Set();
@@ -40,12 +53,31 @@
     return Number.isNaN(n) ? null : n;
   }
 
+  function parseFloatSafe(raw) {
+    if (raw == null) return null;
+    const cleaned = String(raw).replace(/[,\s%]/g, '');
+    if (cleaned === '' || cleaned === '-') return null;
+    const n = parseFloat(cleaned);
+    return Number.isNaN(n) ? null : n;
+  }
+
   function clampKeep(n) {
     return Math.max(KEEP_MIN, Math.min(KEEP_MAX, n));
   }
 
-  function clampPct(n) {
-    return Math.max(0, Math.min(100, n));
+  function populateKeepDropdowns() {
+    for (const id of ['ck-out', 'tk-out']) {
+      const sel = document.getElementById(id);
+      sel.innerHTML = '';
+      for (let i = KEEP_MIN; i <= KEEP_MAX; i++) {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = String(i);
+        sel.appendChild(opt);
+      }
+    }
+    document.getElementById('ck-out').value = String(state.currentKeep);
+    document.getElementById('tk-out').value = String(state.targetKeep);
   }
 
   function renderBuildingsGrid() {
@@ -82,25 +114,25 @@
     });
   }
 
-  function renderBonusGrid() {
-    const grid = document.getElementById('bonus-grid');
+  function renderEfficiencyGrid() {
+    const grid = document.getElementById('efficiency-grid');
     grid.innerHTML = '';
-    for (const r of RESOURCE_KEYS) {
-      if (state.bonusPctByResource[r] == null) state.bonusPctByResource[r] = 0;
+    for (const cat of CATEGORY_KEYS) {
       const card = document.createElement('div');
       card.className = 'inv-card';
+      const pctDisplay = (state.efficiencyByCategory[cat] * 100).toFixed(3).replace(/\.?0+$/, '');
       card.innerHTML = `
-        <label>${RESOURCE_LABELS[r]} (%)</label>
-        <input type="text" inputmode="numeric" data-bonus="${r}" value="${Math.round(state.bonusPctByResource[r] * 100)}" />
+        <label>${CATEGORY_LABELS[cat]} (%)</label>
+        <input type="text" inputmode="decimal" data-efficiency="${cat}" value="${pctDisplay}" />
       `;
       grid.appendChild(card);
     }
-    grid.querySelectorAll('input[data-bonus]').forEach(input => {
+    grid.querySelectorAll('input[data-efficiency]').forEach(input => {
       input.addEventListener('input', () => {
-        const n = parseIntSafe(input.value);
+        const n = parseFloatSafe(input.value);
         if (n == null) { input.style.borderColor = 'var(--blood)'; return; }
         input.style.borderColor = '';
-        state.bonusPctByResource[input.dataset.bonus] = clampPct(n) / 100;
+        state.efficiencyByCategory[input.dataset.efficiency] = Math.max(0, n) / 100;
         recompute();
       });
     });
@@ -114,7 +146,7 @@
       card.className = 'stat-card';
       const reduced = plan.totals[r];
       const original = plan.totalsBeforeBonus[r];
-      const savedLine = original > reduced
+      const savedLine = original > reduced + 0.5
         ? `<div class="stat-sub">was ${globalThis.formatResource(original)}</div>` : '';
       card.innerHTML = `
         <div class="stat-label">${RESOURCE_LABELS[r]}</div>
@@ -125,7 +157,7 @@
     }
     const timeCard = document.createElement('div');
     timeCard.className = 'stat-card savings';
-    const tSub = plan.totalsBeforeBonus.hours > plan.totals.hours
+    const tSub = plan.totalsBeforeBonus.hours > plan.totals.hours + 0.01
       ? `<div class="stat-sub">was ${globalThis.formatHours(plan.totalsBeforeBonus.hours)}</div>` : '';
     timeCard.innerHTML = `
       <div class="stat-label">Total time</div>
@@ -176,12 +208,14 @@
         : Math.max(KEEP_MIN - 1, state.currentKeep - 1);
       if (state.buildingLevels[b] !== def) params.set('b.' + b, state.buildingLevels[b]);
     }
-    for (const r of RESOURCE_KEYS) {
-      const pct = Math.round((state.bonusPctByResource[r] || 0) * 100);
-      if (pct !== 0) params.set('r.' + r, pct);
+    for (const cat of CATEGORY_KEYS) {
+      const pct = (state.efficiencyByCategory[cat] || 0) * 100;
+      if (pct !== 0) params.set('e.' + cat, pct);
     }
-    const tPct = Math.round((state.timeReductionPct || 0) * 100);
-    if (tPct !== 0) params.set('tr', tPct);
+    const csPct = (state.constructionSpeedPct || 0) * 100;
+    if (csPct !== 0) params.set('cs', csPct);
+    if (state.freeBuildTimeHours !== 0) params.set('fbt', state.freeBuildTimeHours);
+    if (state.flatWoodReduction !== 0) params.set('fw', state.flatWoodReduction);
     return window.location.origin + window.location.pathname + '?' + params.toString();
   }
 
@@ -193,12 +227,22 @@
       if (key.startsWith('b.')) {
         const n = parseIntSafe(val);
         if (n != null && n >= 0) state.buildingLevels[key.slice(2)] = n;
-      } else if (key.startsWith('r.')) {
+      } else if (key.startsWith('e.')) {
+        const n = parseFloatSafe(val);
+        if (n != null) state.efficiencyByCategory[key.slice(2)] = Math.max(0, n) / 100;
+      } else if (key === 'cs') {
+        const n = parseFloatSafe(val);
+        if (n != null) state.constructionSpeedPct = Math.max(0, n) / 100;
+      } else if (key === 'fbt') {
+        const n = parseFloatSafe(val);
+        if (n != null) {
+          state.freeBuildTimeHours = Math.max(0, n);
+          fbtUi.hours = Math.floor(state.freeBuildTimeHours);
+          fbtUi.minutes = Math.round((state.freeBuildTimeHours - fbtUi.hours) * 60);
+        }
+      } else if (key === 'fw') {
         const n = parseIntSafe(val);
-        if (n != null) state.bonusPctByResource[key.slice(2)] = clampPct(n) / 100;
-      } else if (key === 'tr') {
-        const n = parseIntSafe(val);
-        if (n != null) state.timeReductionPct = clampPct(n) / 100;
+        if (n != null) state.flatWoodReduction = Math.max(0, n);
       }
     }
   }
@@ -214,8 +258,10 @@
       currentKeep: state.currentKeep,
       targetKeep: state.targetKeep,
       currentBuildingLevels: state.buildingLevels,
-      bonusPctByResource: state.bonusPctByResource,
-      timeReductionPct: state.timeReductionPct,
+      efficiencyByCategory: state.efficiencyByCategory,
+      constructionSpeedPct: state.constructionSpeedPct,
+      freeBuildTimeHours: state.freeBuildTimeHours,
+      flatWoodReduction: state.flatWoodReduction,
       costs: globalThis.COSTS || {},
       prereqs: globalThis.PREREQS || {},
     });
@@ -224,31 +270,49 @@
     document.getElementById('share-url').value = buildUrl();
   }
 
-  function wireGoalInputs() {
-    document.querySelectorAll('.val-input').forEach(input => {
-      const field = input.dataset.field;
-      input.addEventListener('input', () => {
-        const n = parseIntSafe(input.value);
-        if (n == null) { input.classList.add('invalid'); return; }
-        input.classList.remove('invalid');
-        if (field === 'currentKeep' || field === 'targetKeep') {
-          state[field] = clampKeep(n);
-        } else if (field === 'timeReductionPct') {
-          state.timeReductionPct = clampPct(n) / 100;
-        }
-        recompute();
-      });
+  function wireKeepDropdowns() {
+    document.getElementById('ck-out').addEventListener('change', (e) => {
+      state.currentKeep = clampKeep(parseIntSafe(e.target.value) ?? state.currentKeep);
+      recompute();
+    });
+    document.getElementById('tk-out').addEventListener('change', (e) => {
+      state.targetKeep = clampKeep(parseIntSafe(e.target.value) ?? state.targetKeep);
+      recompute();
     });
   }
 
-  function wireApplyAll() {
-    document.getElementById('bonus-apply-all').addEventListener('input', (e) => {
-      const n = parseIntSafe(e.target.value);
-      if (n == null) return;
-      const pct = clampPct(n);
-      for (const r of RESOURCE_KEYS) state.bonusPctByResource[r] = pct / 100;
-      renderBonusGrid();
+  function wireScalarInputs() {
+    document.getElementById('cs-out').addEventListener('input', (e) => {
+      const n = parseFloatSafe(e.target.value);
+      if (n == null) { e.target.classList.add('invalid'); return; }
+      e.target.classList.remove('invalid');
+      state.constructionSpeedPct = Math.max(0, n) / 100;
       recompute();
+    });
+    document.getElementById('fw-out').addEventListener('input', (e) => {
+      const n = parseIntSafe(e.target.value);
+      if (n == null) { e.target.classList.add('invalid'); return; }
+      e.target.classList.remove('invalid');
+      state.flatWoodReduction = Math.max(0, n);
+      recompute();
+    });
+    function updateFbt() {
+      state.freeBuildTimeHours = Math.max(0, fbtUi.hours + fbtUi.minutes / 60);
+      recompute();
+    }
+    document.getElementById('fbt-h').addEventListener('input', (e) => {
+      const n = parseIntSafe(e.target.value);
+      if (n == null) { e.target.classList.add('invalid'); return; }
+      e.target.classList.remove('invalid');
+      fbtUi.hours = Math.max(0, n);
+      updateFbt();
+    });
+    document.getElementById('fbt-m').addEventListener('input', (e) => {
+      const n = parseIntSafe(e.target.value);
+      if (n == null) { e.target.classList.add('invalid'); return; }
+      e.target.classList.remove('invalid');
+      fbtUi.minutes = Math.max(0, n);
+      updateFbt();
     });
   }
 
@@ -266,13 +330,15 @@
 
   // Init
   loadFromUrl();
-  document.getElementById('ck-out').value = state.currentKeep;
-  document.getElementById('tk-out').value = state.targetKeep;
-  document.getElementById('tr-out').value = Math.round(state.timeReductionPct * 100);
+  populateKeepDropdowns();
+  document.getElementById('cs-out').value = (state.constructionSpeedPct * 100).toFixed(3).replace(/\.?0+$/, '') || '0';
+  document.getElementById('fw-out').value = String(state.flatWoodReduction);
+  document.getElementById('fbt-h').value = String(fbtUi.hours);
+  document.getElementById('fbt-m').value = String(fbtUi.minutes);
   renderBuildingsGrid();
-  renderBonusGrid();
-  wireGoalInputs();
-  wireApplyAll();
+  renderEfficiencyGrid();
+  wireKeepDropdowns();
+  wireScalarInputs();
   wireCopy();
   recompute();
 })();
