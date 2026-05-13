@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { computeUpgradePlan } = require('../keep-calc.js');
+const { computeUpgradePlan, formatNumber, formatHours, formatResource } = require('../keep-calc.js');
 
 // Minimal data fixtures used by these tests.
 const COSTS = {};
@@ -123,4 +123,22 @@ test('clamps bonus inputs outside 0..1', () => {
   });
   assert.equal(plan.totals.wood, 0);
   assert.equal(plan.totals.hours, 0);
+});
+
+test('formatNumber: thousands separator', () => {
+  assert.equal(formatNumber(0), '0');
+  assert.equal(formatNumber(1234567), '1,234,567');
+});
+
+test('formatResource: small values keep units, large values switch to millions with three decimals', () => {
+  assert.equal(formatResource(950), '950');
+  assert.equal(formatResource(1_234_567), '1.235M');
+  assert.equal(formatResource(50_180_000), '50.180M');
+});
+
+test('formatHours: days/hours/minutes', () => {
+  assert.equal(formatHours(0), '0m');
+  assert.equal(formatHours(1.5), '1h 30m');
+  assert.equal(formatHours(25), '1d 1h 0m');
+  assert.equal(formatHours(503.6166), '20d 23h 37m');
 });

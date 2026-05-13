@@ -73,5 +73,25 @@
     return { rows, totalsBeforeBonus, totals };
   }
 
-  return { computeUpgradePlan, RESOURCE_KEYS };
+  function formatNumber(n) {
+    return Math.round(n).toLocaleString('en-US');
+  }
+
+  function formatResource(n) {
+    if (n < 1_000_000) return formatNumber(n);
+    return (n / 1_000_000).toFixed(3) + 'M';
+  }
+
+  function formatHours(hoursFloat) {
+    const totalMinutes = Math.round(hoursFloat * 60);
+    if (totalMinutes <= 0) return '0m';
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+    if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  }
+
+  return { computeUpgradePlan, RESOURCE_KEYS, formatNumber, formatResource, formatHours };
 }));
