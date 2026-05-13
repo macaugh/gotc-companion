@@ -1,5 +1,12 @@
 (function () {
   const RESOURCE_KEYS = globalThis.RESOURCE_KEYS;
+  if (!RESOURCE_KEYS || typeof globalThis.computeUpgradePlan !== 'function') {
+    const grid = document.getElementById('buildings-grid');
+    if (grid) {
+      grid.innerHTML = '<p class="error-text" style="grid-column:1/-1">Engine failed to load. Reload the page.</p>';
+    }
+    return;
+  }
   const RESOURCE_LABELS = {
     wood: 'Wood', food: 'Food', stone: 'Stone', iron: 'Iron',
     brick: 'Brick', pine: 'Pine', keystone: 'Keystone', valyrian: 'Valyrian Stone',
@@ -13,6 +20,7 @@
     buildingLevels: {},
     bonusPctByResource: {},
     timeReductionPct: 0,
+    defaultBuildingLevel: null,
   };
 
   function buildingsFromPrereqs() {
@@ -48,7 +56,10 @@
       grid.innerHTML = '<p class="inv-hint" style="grid-column: 1 / -1;">No building data loaded yet.</p>';
       return;
     }
-    const defaultLevel = Math.max(KEEP_MIN - 1, state.currentKeep - 1);
+    if (state.defaultBuildingLevel == null) {
+      state.defaultBuildingLevel = Math.max(KEEP_MIN - 1, state.currentKeep - 1);
+    }
+    const defaultLevel = state.defaultBuildingLevel;
     for (const name of buildings) {
       if (state.buildingLevels[name] == null) state.buildingLevels[name] = defaultLevel;
       const card = document.createElement('div');
@@ -160,7 +171,9 @@
     params.set('ck', state.currentKeep);
     params.set('tk', state.targetKeep);
     for (const b of Object.keys(state.buildingLevels)) {
-      const def = Math.max(KEEP_MIN - 1, state.currentKeep - 1);
+      const def = state.defaultBuildingLevel != null
+        ? state.defaultBuildingLevel
+        : Math.max(KEEP_MIN - 1, state.currentKeep - 1);
       if (state.buildingLevels[b] !== def) params.set('b.' + b, state.buildingLevels[b]);
     }
     for (const r of RESOURCE_KEYS) {
