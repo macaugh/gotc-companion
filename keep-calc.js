@@ -33,7 +33,34 @@
       return { rows, totalsBeforeBonus, totals };
     }
 
-    // Implementation grows in later tasks.
+    const levels = Object.assign({}, currentBuildingLevels);
+
+    function emitRow(building, fromLevel, toLevel) {
+      const costsForLevel =
+        costs[building] && costs[building][toLevel] ? costs[building][toLevel] : null;
+      const row = {
+        building,
+        fromLevel,
+        toLevel,
+        costs: costsForLevel || zeroTotals(),
+        missing: !costsForLevel,
+      };
+      rows.push(row);
+      for (const k of RESOURCE_KEYS) totalsBeforeBonus[k] += row.costs[k] || 0;
+      totalsBeforeBonus.hours += row.costs.hours || 0;
+    }
+
+    for (let k = currentKeep + 1; k <= targetKeep; k++) {
+      emitRow('Keep', k - 1, k);
+    }
+
+    for (const r of RESOURCE_KEYS) {
+      const pct = Math.min(1, Math.max(0, bonusPctByResource[r] || 0));
+      totals[r] = totalsBeforeBonus[r] * (1 - pct);
+    }
+    const tPct = Math.min(1, Math.max(0, timeReductionPct || 0));
+    totals.hours = totalsBeforeBonus.hours * (1 - tPct);
+
     return { rows, totalsBeforeBonus, totals };
   }
 
