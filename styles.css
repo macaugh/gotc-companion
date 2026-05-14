@@ -259,6 +259,9 @@
     color: var(--gold-faint);
     margin-bottom: 8px;
   }
+  #buildings-grid .inv-card label {
+    color: var(--gold-dim);
+  }
   .inv-card input {
     width: 100%;
     background: var(--bg-deep);
