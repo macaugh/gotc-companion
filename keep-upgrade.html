@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Night's Watch: The Builders — GoT Conquest Calculator</title>
+<meta name="description" content="A calculator for the resource and time cost of upgrading your Keep in Game of Thrones: Conquest.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="page">
+
+  <nav class="nav">
+    <a href="index.html">Prestige Ledger</a>
+    <a href="keep-upgrade.html" class="current">Night's Watch: The Builders</a>
+  </nav>
+
+  <div class="crest">⚔ ✦ ⚔</div>
+  <h1 class="title">Night's Watch: The Builders</h1>
+  <p class="subtitle">Brothers of the Wall reckon the stones of a Keep</p>
+
+  <div class="panel" id="wrap">
+
+    <h2>Goal &amp; Target</h2>
+    <div class="row">
+      <label>Current keep level</label>
+      <select class="val-select" id="ck-out" data-field="currentKeep" style="flex: 1 1 auto;"></select>
+    </div>
+    <div class="row">
+      <label>Target keep level</label>
+      <select class="val-select" id="tk-out" data-field="targetKeep" style="flex: 1 1 auto;"></select>
+    </div>
+    <p class="error-text" id="goal-error" hidden>Target must be ≥ current.</p>
+
+    <div class="divider"></div>
+
+    <h2>Current Building Levels</h2>
+    <p class="inv-hint">Defaults to the minimum levels required to be at your current Keep. Adjust upward for buildings you've upgraded further.</p>
+    <div class="inventory-grid" id="buildings-grid"></div>
+    <div style="margin-top: 1rem; text-align: right;">
+      <button id="reset-min-btn" type="button" class="ghost-btn">Reset to minimum for Keep <span id="reset-min-keep"></span></button>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>Cost Efficiency</h2>
+    <p class="inv-hint">Enter the "Building &hellip; Cost Efficiency" percentages from your in-game House Information &rarr; Stats screen. Values may exceed 100%.</p>
+    <div class="bonus-grid" id="efficiency-grid"></div>
+    <div class="row" style="margin-top: 1rem;">
+      <label>Flat wood reduction</label>
+      <input type="text" inputmode="numeric" class="val-input" id="fw-out" data-field="flatWoodReduction" value="0" style="flex: 1 1 auto;" />
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>Construction Time</h2>
+    <div class="row">
+      <label>Construction Speed (%)</label>
+      <input type="text" inputmode="numeric" class="val-input" id="cs-out" data-field="constructionSpeedPct" value="0" style="flex: 1 1 auto;" />
+    </div>
+    <div class="row">
+      <label>Free Build Time</label>
+      <input type="text" inputmode="numeric" class="val-input" id="fbt-h" data-field="freeBuildTimeHoursOnly" value="0" style="flex: 0 0 80px;" />
+      <span style="color: var(--gold-faint); font-family: 'Cinzel', Georgia, serif; font-size: 11px; letter-spacing: 0.15em;">h</span>
+      <input type="text" inputmode="numeric" class="val-input" id="fbt-m" data-field="freeBuildTimeMinutesOnly" value="0" style="flex: 0 0 80px;" />
+      <span style="color: var(--gold-faint); font-family: 'Cinzel', Georgia, serif; font-size: 11px; letter-spacing: 0.15em;">m</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>Totals</h2>
+    <div class="stats-grid" id="totals-grid"></div>
+
+    <details class="breakdown" id="breakdown">
+      <summary>Per-building breakdown</summary>
+      <div id="breakdown-body"></div>
+    </details>
+
+    <div class="share">
+      <span class="share-label">Shareable link</span>
+      <input type="text" id="share-url" readonly />
+      <button id="copy-btn" type="button">Copy</button>
+    </div>
+
+    <div class="footnote">
+      Efficiency divisors apply per category; speed and free build time apply to construction time. Rows shown in red indicate cost data not yet transcribed.
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Forged in fire &amp; vanilla JavaScript · <a href="https://github.com/macaugh/gotc-companion" target="_blank" rel="noopener">view source</a></p>
+  </footer>
+
+</div>
+
+<script src="keep-calc.js"></script>
+<script src="keep-data.generated.js"></script>
+<script src="keep-upgrade.js"></script>
+</body>
+</html>
