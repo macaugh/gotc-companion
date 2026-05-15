@@ -65,16 +65,22 @@
       totalsBeforeBonus.hours += row.costs.hours || 0;
     }
 
+    const inProgress = new Set();
     function ensureLevel(building, target) {
       let have = levels[building] != null ? levels[building] : 0;
       while (have < target) {
-        const reqs = requirements[building] || [];
-        for (const slot of reqs) {
-          if (!Array.isArray(slot)) continue;
-          const req = slot[have]; // index `have` is the prereq for step have→have+1
-          if (req && req.building && req.level > 0) {
-            ensureLevel(req.building, req.level);
+        const key = building + ':' + (have + 1);
+        if (!inProgress.has(key)) {
+          inProgress.add(key);
+          const reqs = requirements[building] || [];
+          for (const slot of reqs) {
+            if (!Array.isArray(slot)) continue;
+            const req = slot[have]; // index `have` is the prereq for step have→have+1
+            if (req && req.building && req.level > 0) {
+              ensureLevel(req.building, req.level);
+            }
           }
+          inProgress.delete(key);
         }
         const nextLevel = have + 1;
         emitRow(building, have, nextLevel);
@@ -107,18 +113,29 @@
   // Returns the minimum level each non-Keep building must be at for a player
   // to be at Keep:targetKeep. Derived by replaying the REQUIREMENTS graph from
   // scratch — whatever level a building reaches in the walk IS its minimum.
+  //
+  // Cycle protection: at the game's initial state Keep:1 and Wall:1 mutually
+  // require each other (both seeded at game start). If we'd re-enter
+  // ensure(building, level) while it's already in flight up the call stack,
+  // treat the prereq as satisfied and continue.
   function computeMinimumLevels(targetKeep, requirements) {
     const levels = {};
+    const inProgress = new Set();
     function ensure(b, target) {
       let have = levels[b] != null ? levels[b] : 0;
       while (have < target) {
-        const reqs = requirements[b] || [];
-        for (const slot of reqs) {
-          if (!Array.isArray(slot)) continue;
-          const req = slot[have];
-          if (req && req.building && req.level > 0) {
-            ensure(req.building, req.level);
+        const key = b + ':' + (have + 1);
+        if (!inProgress.has(key)) {
+          inProgress.add(key);
+          const reqs = requirements[b] || [];
+          for (const slot of reqs) {
+            if (!Array.isArray(slot)) continue;
+            const req = slot[have];
+            if (req && req.building && req.level > 0) {
+              ensure(req.building, req.level);
+            }
           }
+          inProgress.delete(key);
         }
         have++;
         levels[b] = have;

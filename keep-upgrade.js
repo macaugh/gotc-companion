@@ -36,13 +36,17 @@
   const fbtUi = { hours: 0, minutes: 0 };
 
   function buildingsForGrid() {
-    // List every upgradeable building from BUILDINGS metadata, excluding Keep
-    // (Keep's level comes from the dropdowns, not the building grid).
+    // Upgradeable buildings from BUILDINGS metadata, excluding Keep itself,
+    // filtered to those already unlocked at the player's current Keep level
+    // (BUILDINGS[name].unlockLevel is the Keep level at which the building
+    // becomes available).
     const BUILDINGS = globalThis.BUILDINGS || {};
     const names = [];
     for (const name of Object.keys(BUILDINGS)) {
       const meta = BUILDINGS[name];
-      if (meta && meta.upgradeable && name !== 'Keep') names.push(name);
+      if (!meta || !meta.upgradeable || name === 'Keep') continue;
+      if ((meta.unlockLevel || 0) > state.currentKeep) continue;
+      names.push(name);
     }
     return names.sort();
   }
@@ -279,6 +283,7 @@
     document.getElementById('ck-out').addEventListener('change', (e) => {
       state.currentKeep = clampKeep(parseIntSafe(e.target.value) ?? state.currentKeep);
       updateResetButtonLabel();
+      renderBuildingsGrid();  // visible set + defaults depend on currentKeep
       recompute();
     });
     document.getElementById('tk-out').addEventListener('change', (e) => {
