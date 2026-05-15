@@ -115,6 +115,13 @@
       flatWoodRemaining -= take;
     }
 
+    // Round each row to integer units (the display granularity), then sum,
+    // so totals equal the sum of the per-building values shown in the table.
+    for (const row of rows) {
+      for (const r of RESOURCE_KEYS) {
+        row.adjustedCosts[r] = Math.round(row.adjustedCosts[r]);
+      }
+    }
     for (const r of RESOURCE_KEYS) {
       let sum = 0;
       for (const row of rows) sum += row.adjustedCosts[r];
