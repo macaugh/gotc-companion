@@ -554,18 +554,22 @@
 .breakdown summary::-webkit-details-marker { display: none; }
 .breakdown summary::before { content: "▸  "; color: var(--gold-dark); }
 .breakdown[open] summary::before { content: "▾  "; }
+.breakdown #breakdown-body {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .breakdown table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 0.75rem;
 }
 .breakdown th, .breakdown td {
-  padding: 8px 10px;
+  padding: 7px 8px;
   text-align: right;
   border-bottom: 1px solid var(--border);
   color: var(--gold-pale);
   font-family: ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Code', Consolas, monospace;
-  font-size: 13px;
+  font-size: 12.5px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
