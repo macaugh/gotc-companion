@@ -92,20 +92,59 @@
     ensureLevel('Keep', targetKeep);
 
     // Per-resource efficiency divisor (in-game "+X% Cost Efficiency" model)
+    // applied per-building so the breakdown table reflects reduced costs.
+    const effByResource = {};
     for (const r of RESOURCE_KEYS) {
       const category = RESOURCE_TO_CATEGORY[r];
-      const eff = Math.max(0, efficiencyByCategory[category] || 0);
-      totals[r] = totalsBeforeBonus[r] / (1 + eff);
+      effByResource[r] = Math.max(0, efficiencyByCategory[category] || 0);
+    }
+    for (const row of rows) {
+      row.adjustedCosts = {};
+      for (const r of RESOURCE_KEYS) {
+        row.adjustedCosts[r] = (row.costs[r] || 0) / (1 + effByResource[r]);
+      }
     }
 
-    // Flat wood reduction after wood efficiency, floor at zero
-    const flatWood = Math.max(0, flatWoodReduction || 0);
-    totals.wood = Math.max(0, totals.wood - flatWood);
+    // Flat wood reduction is a single pool: drain it across rows in order
+    // so each row's wood floors at zero before the next row is affected.
+    let flatWoodRemaining = Math.max(0, flatWoodReduction || 0);
+    for (const row of rows) {
+      if (flatWoodRemaining <= 0) break;
+      const take = Math.min(flatWoodRemaining, row.adjustedCosts.wood);
+      row.adjustedCosts.wood -= take;
+      flatWoodRemaining -= take;
+    }
 
-    // Construction-speed divisor, then subtract free build time, floor at zero
+    // Round each row to integer units (the display granularity), then sum,
+    // so totals equal the sum of the per-building values shown in the table.
+    for (const row of rows) {
+      for (const r of RESOURCE_KEYS) {
+        row.adjustedCosts[r] = Math.round(row.adjustedCosts[r]);
+      }
+    }
+    for (const r of RESOURCE_KEYS) {
+      let sum = 0;
+      for (const row of rows) sum += row.adjustedCosts[r];
+      totals[r] = sum;
+    }
+
+    // Construction-speed divisor and free build time apply per-building: each
+    // row's hours are divided by speed and then reduced by the flat free build
+    // time, floored at zero. A row whose adjusted time is ≤ free build time
+    // contributes zero to the total.
     const speed = Math.max(0, constructionSpeedPct || 0);
     const freeHours = Math.max(0, freeBuildTimeHours || 0);
-    totals.hours = Math.max(0, totalsBeforeBonus.hours / (1 + speed) - freeHours);
+    // Round each row to the minute (the display granularity), then sum, so
+    // the total equals the sum of the per-building times shown in the table.
+    let totalMinutes = 0;
+    for (const row of rows) {
+      const raw = row.costs.hours || 0;
+      const adjusted = Math.max(0, raw / (1 + speed) - freeHours);
+      const rounded = Math.round(adjusted * 60) / 60;
+      row.adjustedHours = rounded;
+      totalMinutes += Math.round(adjusted * 60);
+    }
+    totals.hours = totalMinutes / 60;
 
     return { rows, totalsBeforeBonus, totals };
   }
