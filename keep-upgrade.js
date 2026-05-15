@@ -36,13 +36,16 @@
   // UI-only split storage for the h + m inputs.
   const fbtUi = { hours: 0, minutes: 0 };
 
-  function buildingsFromPrereqs() {
-    const set = new Set();
-    const PREREQS = globalThis.PREREQS || {};
-    for (const k of Object.keys(PREREQS)) {
-      for (const b of Object.keys(PREREQS[k])) set.add(b);
+  function buildingsForGrid() {
+    // List every upgradeable building from BUILDINGS metadata, excluding Keep
+    // (Keep's level comes from the dropdowns, not the building grid).
+    const BUILDINGS = globalThis.BUILDINGS || {};
+    const names = [];
+    for (const name of Object.keys(BUILDINGS)) {
+      const meta = BUILDINGS[name];
+      if (meta && meta.upgradeable && name !== 'Keep') names.push(name);
     }
-    return Array.from(set).sort();
+    return names.sort();
   }
 
   function parseIntSafe(raw) {
@@ -81,7 +84,7 @@
   }
 
   function renderBuildingsGrid() {
-    const buildings = buildingsFromPrereqs();
+    const buildings = buildingsForGrid();
     const grid = document.getElementById('buildings-grid');
     grid.innerHTML = '';
     if (buildings.length === 0) {
@@ -263,7 +266,7 @@
       freeBuildTimeHours: state.freeBuildTimeHours,
       flatWoodReduction: state.flatWoodReduction,
       costs: globalThis.COSTS || {},
-      prereqs: globalThis.PREREQS || {},
+      requirements: globalThis.REQUIREMENTS || {},
     });
     renderTotals(plan);
     renderBreakdown(plan);

@@ -20,6 +20,13 @@
     return t;
   }
 
+  // Compute the upgrade plan to take a player's Keep from currentKeep to
+  // targetKeep, given the per-building requirement graph from the APK.
+  //
+  // REQUIREMENTS[building] = [slot0Array, slot1Array?] where each slot is an
+  // array indexed so that slot[X] is the prerequisite to upgrade `building`
+  // from level X to level X+1. Each entry is { building, level } or a falsy
+  // placeholder meaning "no prereq for this step".
   function computeUpgradePlan(input) {
     const {
       currentKeep,
@@ -30,7 +37,7 @@
       freeBuildTimeHours = 0,
       flatWoodReduction = 0,
       costs = {},
-      prereqs = {},
+      requirements = {},
     } = input;
 
     const rows = [];
@@ -42,47 +49,54 @@
     }
 
     const levels = Object.assign({}, currentBuildingLevels);
+    if (levels.Keep == null) levels.Keep = currentKeep;
 
     function emitRow(building, fromLevel, toLevel) {
-      const costsForLevel =
-        costs[building] && costs[building][toLevel] ? costs[building][toLevel] : null;
+      const c = costs[building] && costs[building][toLevel] ? costs[building][toLevel] : null;
       const row = {
         building,
         fromLevel,
         toLevel,
-        costs: costsForLevel || zeroTotals(),
-        missing: !costsForLevel,
+        costs: c || zeroTotals(),
+        missing: !c,
       };
       rows.push(row);
       for (const k of RESOURCE_KEYS) totalsBeforeBonus[k] += row.costs[k] || 0;
       totalsBeforeBonus.hours += row.costs.hours || 0;
     }
 
-    for (let k = currentKeep + 1; k <= targetKeep; k++) {
-      emitRow('Keep', k - 1, k);
-      const req = prereqs[k] || {};
-      for (const building of Object.keys(req)) {
-        const required = req[building];
-        const have = levels[building] != null ? levels[building] : 0;
-        for (let lvl = have + 1; lvl <= required; lvl++) {
-          emitRow(building, lvl - 1, lvl);
+    function ensureLevel(building, target) {
+      let have = levels[building] != null ? levels[building] : 0;
+      while (have < target) {
+        const reqs = requirements[building] || [];
+        for (const slot of reqs) {
+          if (!Array.isArray(slot)) continue;
+          const req = slot[have]; // index `have` is the prereq for step have→have+1
+          if (req && req.building && req.level > 0) {
+            ensureLevel(req.building, req.level);
+          }
         }
-        if (required > have) levels[building] = required;
+        const nextLevel = have + 1;
+        emitRow(building, have, nextLevel);
+        levels[building] = nextLevel;
+        have = nextLevel;
       }
     }
 
-    // Apply efficiency divisors per resource category
+    ensureLevel('Keep', targetKeep);
+
+    // Per-resource efficiency divisor (in-game "+X% Cost Efficiency" model)
     for (const r of RESOURCE_KEYS) {
       const category = RESOURCE_TO_CATEGORY[r];
       const eff = Math.max(0, efficiencyByCategory[category] || 0);
       totals[r] = totalsBeforeBonus[r] / (1 + eff);
     }
 
-    // Apply flat wood reduction after wood efficiency divisor, floor at zero
+    // Flat wood reduction after wood efficiency, floor at zero
     const flatWood = Math.max(0, flatWoodReduction || 0);
     totals.wood = Math.max(0, totals.wood - flatWood);
 
-    // Apply construction speed divisor, then subtract free build time, floor at zero
+    // Construction-speed divisor, then subtract free build time, floor at zero
     const speed = Math.max(0, constructionSpeedPct || 0);
     const freeHours = Math.max(0, freeBuildTimeHours || 0);
     totals.hours = Math.max(0, totalsBeforeBonus.hours / (1 + speed) - freeHours);
