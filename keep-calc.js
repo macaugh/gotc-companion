@@ -102,10 +102,20 @@
     const flatWood = Math.max(0, flatWoodReduction || 0);
     totals.wood = Math.max(0, totals.wood - flatWood);
 
-    // Construction-speed divisor, then subtract free build time, floor at zero
+    // Construction-speed divisor and free build time apply per-building: each
+    // row's hours are divided by speed and then reduced by the flat free build
+    // time, floored at zero. A row whose adjusted time is ≤ free build time
+    // contributes zero to the total.
     const speed = Math.max(0, constructionSpeedPct || 0);
     const freeHours = Math.max(0, freeBuildTimeHours || 0);
-    totals.hours = Math.max(0, totalsBeforeBonus.hours / (1 + speed) - freeHours);
+    let totalHours = 0;
+    for (const row of rows) {
+      const raw = row.costs.hours || 0;
+      const adjusted = Math.max(0, raw / (1 + speed) - freeHours);
+      row.adjustedHours = adjusted;
+      totalHours += adjusted;
+    }
+    totals.hours = totalHours;
 
     return { rows, totalsBeforeBonus, totals };
   }
