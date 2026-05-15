@@ -183,15 +183,21 @@
       body.innerHTML = '<p class="inv-hint">No upgrades required.</p>';
       return;
     }
+    // Only render resource columns that have at least one non-zero value
+    // across all rows. Resources like Valyrian (currently zero everywhere) or
+    // Iron (zero for some keep ranges) get dropped, keeping the table narrow.
+    const visibleResources = RESOURCE_KEYS.filter(r =>
+      plan.rows.some(row => !row.missing && (row.costs[r] || 0) > 0)
+    );
     const head = `
       <thead><tr>
         <th>Building</th><th>From → To</th>
-        ${RESOURCE_KEYS.map(r => `<th>${RESOURCE_LABELS[r]}</th>`).join('')}
+        ${visibleResources.map(r => `<th>${RESOURCE_LABELS[r]}</th>`).join('')}
         <th>Time</th>
       </tr></thead>`;
     const rows = plan.rows.map(r => {
       const cls = r.missing ? ' class="missing"' : '';
-      const cells = RESOURCE_KEYS.map(k => `<td>${r.missing ? '—' : globalThis.formatResource(r.costs[k] || 0)}</td>`).join('');
+      const cells = visibleResources.map(k => `<td>${r.missing ? '—' : globalThis.formatResource(r.costs[k] || 0)}</td>`).join('');
       const time = r.missing ? '—' : globalThis.formatHours(r.costs.hours || 0);
       return `<tr${cls}><td>${r.building}</td><td>${r.fromLevel} → ${r.toLevel}</td>${cells}<td>${time}</td></tr>`;
     }).join('');
