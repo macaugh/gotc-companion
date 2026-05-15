@@ -259,7 +259,8 @@
     color: var(--gold-faint);
     margin-bottom: 8px;
   }
-  #buildings-grid .inv-card label {
+  #buildings-grid .inv-card label,
+  #efficiency-grid .inv-card label {
     color: var(--gold-dim);
   }
   .inv-card input {
@@ -284,7 +285,7 @@
     border-color: var(--gold-deep);
   }
   .inv-hint {
-    color: var(--gold-faint);
+    color: var(--gold-dim);
     font-size: 13px;
     font-style: italic;
     margin: 0 0 12px;
