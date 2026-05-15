@@ -31,7 +31,6 @@
     constructionSpeedPct: 0,
     freeBuildTimeHours: 0,         // decimal — combined h + m/60
     flatWoodReduction: 0,
-    defaultBuildingLevel: null,
   };
   // UI-only split storage for the h + m inputs.
   const fbtUi = { hours: 0, minutes: 0 };
@@ -83,6 +82,11 @@
     document.getElementById('tk-out').value = String(state.targetKeep);
   }
 
+  function minimumLevelsForCurrentKeep() {
+    if (typeof globalThis.computeMinimumLevels !== 'function') return {};
+    return globalThis.computeMinimumLevels(state.currentKeep, globalThis.REQUIREMENTS || {});
+  }
+
   function renderBuildingsGrid() {
     const buildings = buildingsForGrid();
     const grid = document.getElementById('buildings-grid');
@@ -91,12 +95,11 @@
       grid.innerHTML = '<p class="inv-hint" style="grid-column: 1 / -1;">No building data loaded yet.</p>';
       return;
     }
-    if (state.defaultBuildingLevel == null) {
-      state.defaultBuildingLevel = Math.max(KEEP_MIN - 1, state.currentKeep - 1);
-    }
-    const defaultLevel = state.defaultBuildingLevel;
+    const minLevels = minimumLevelsForCurrentKeep();
     for (const name of buildings) {
-      if (state.buildingLevels[name] == null) state.buildingLevels[name] = defaultLevel;
+      if (state.buildingLevels[name] == null) {
+        state.buildingLevels[name] = minLevels[name] || 0;
+      }
       const card = document.createElement('div');
       card.className = 'inv-card';
       const safeId = 'b-' + name.replace(/[^a-zA-Z0-9]/g, '-');
@@ -205,11 +208,10 @@
     const params = new URLSearchParams();
     params.set('ck', state.currentKeep);
     params.set('tk', state.targetKeep);
+    const minLevels = minimumLevelsForCurrentKeep();
     for (const b of Object.keys(state.buildingLevels)) {
-      const def = state.defaultBuildingLevel != null
-        ? state.defaultBuildingLevel
-        : Math.max(KEEP_MIN - 1, state.currentKeep - 1);
-      if (state.buildingLevels[b] !== def) params.set('b.' + b, state.buildingLevels[b]);
+      const min = minLevels[b] || 0;
+      if (state.buildingLevels[b] !== min) params.set('b.' + b, state.buildingLevels[b]);
     }
     for (const cat of CATEGORY_KEYS) {
       const pct = (state.efficiencyByCategory[cat] || 0) * 100;
@@ -276,6 +278,7 @@
   function wireKeepDropdowns() {
     document.getElementById('ck-out').addEventListener('change', (e) => {
       state.currentKeep = clampKeep(parseIntSafe(e.target.value) ?? state.currentKeep);
+      updateResetButtonLabel();
       recompute();
     });
     document.getElementById('tk-out').addEventListener('change', (e) => {
@@ -331,6 +334,23 @@
     });
   }
 
+  function updateResetButtonLabel() {
+    const span = document.getElementById('reset-min-keep');
+    if (span) span.textContent = String(state.currentKeep);
+  }
+
+  function wireResetMin() {
+    document.getElementById('reset-min-btn').addEventListener('click', () => {
+      const mins = minimumLevelsForCurrentKeep();
+      // Reset every building shown in the grid; non-required buildings default to 0.
+      for (const name of buildingsForGrid()) {
+        state.buildingLevels[name] = mins[name] || 0;
+      }
+      renderBuildingsGrid();
+      recompute();
+    });
+  }
+
   // Init
   loadFromUrl();
   populateKeepDropdowns();
@@ -340,8 +360,10 @@
   document.getElementById('fbt-m').value = String(fbtUi.minutes);
   renderBuildingsGrid();
   renderEfficiencyGrid();
+  updateResetButtonLabel();
   wireKeepDropdowns();
   wireScalarInputs();
   wireCopy();
+  wireResetMin();
   recompute();
 })();

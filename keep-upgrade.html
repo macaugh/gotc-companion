@@ -39,8 +39,11 @@
     <div class="divider"></div>
 
     <h2>Current Building Levels</h2>
-    <p class="inv-hint">Each defaults to current keep level − 1 (i.e. fully built for your current keep). Adjust only the buildings you've fallen behind on.</p>
+    <p class="inv-hint">Defaults to the minimum levels required to be at your current Keep. Adjust upward for buildings you've upgraded further.</p>
     <div class="inventory-grid" id="buildings-grid"></div>
+    <div style="margin-top: 1rem; text-align: right;">
+      <button id="reset-min-btn" type="button" class="ghost-btn">Reset to minimum for Keep <span id="reset-min-keep"></span></button>
+    </div>
 
     <div class="divider"></div>
 

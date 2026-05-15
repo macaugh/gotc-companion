@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { computeUpgradePlan, formatNumber, formatHours, formatResource } = require('../keep-calc.js');
+const { computeUpgradePlan, computeMinimumLevels, formatNumber, formatHours, formatResource } = require('../keep-calc.js');
 
 // Build a sparse requirement slot: an array with a prereq only at `targetIdx`,
 // nulls elsewhere. targetIdx is the index of the step `have → have+1` where
@@ -275,6 +275,36 @@ test('flat reductions floor at zero', () => {
   });
   assert.equal(plan.totals.wood, 0);
   assert.equal(plan.totals.hours, 0);
+});
+
+test('computeMinimumLevels: returns transitive prereqs at their highest required level', () => {
+  // Keep step 16→17 needs Wall:16 + Shrine:16 (via slot1). Shrine 16 needs MT:16
+  // (Shrine's slot1[15]). MT 16 needs Medic Tent:16 (MT's slot1[15]).
+  const requirements = {
+    Keep: [
+      reqSlot(16, 'Wall', 16),
+      reqSlot(16, 'Shrine', 16),
+    ],
+    Shrine: [ [], reqSlot(15, "Maester's Tower", 16) ],
+    "Maester's Tower": [ [], reqSlot(15, 'Medic Tent', 16) ],
+  };
+  const mins = computeMinimumLevels(17, requirements);
+  assert.equal(mins.Wall, 16);
+  assert.equal(mins.Shrine, 16);
+  assert.equal(mins["Maester's Tower"], 16);
+  assert.equal(mins['Medic Tent'], 16);
+  assert.equal(mins.Keep, undefined); // Keep excluded from result
+});
+
+test('computeMinimumLevels: takes the highest level required across the walk', () => {
+  // Keep 1→2 needs Wall:1; Keep 2→3 needs Wall:3. Final min Wall = 3.
+  const requirements = {
+    Keep: [
+      [{ building: 'Wall', level: 1 }, { building: 'Wall', level: 3 }],
+    ],
+  };
+  const mins = computeMinimumLevels(3, requirements);
+  assert.equal(mins.Wall, 3);
 });
 
 test('formatNumber: thousands separator', () => {

@@ -421,6 +421,23 @@
     color: var(--bg-deep);
     border-color: var(--gold);
   }
+  .ghost-btn {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--gold-dim);
+    padding: 6px 14px;
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .ghost-btn:hover {
+    border-color: var(--gold-deep);
+    color: var(--gold-bright);
+  }
 
   /* Footnote */
   .footnote {
@@ -532,25 +549,35 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.75rem;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 14px;
 }
 .breakdown th, .breakdown td {
-  padding: 6px 8px;
+  padding: 8px 10px;
   text-align: right;
   border-bottom: 1px solid var(--border);
-  color: var(--text);
+  color: var(--gold-pale);
+  font-family: ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Code', Consolas, monospace;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .breakdown th {
   font-family: 'Cinzel', Georgia, serif;
   font-size: 10px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--gold-dim);
+  color: var(--gold);
   text-align: right;
+  font-variant-numeric: normal;
+}
+.breakdown td:first-child {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
 }
 .breakdown th:first-child, .breakdown td:first-child,
 .breakdown th:nth-child(2), .breakdown td:nth-child(2) { text-align: left; }
+.breakdown tbody tr:hover td { background: rgba(168, 132, 47, 0.05); }
 .breakdown tr.missing td { color: var(--blood); font-style: italic; }
 .error-text { color: #c25656; font-style: italic; font-size: 13px; margin: 6px 0 0; }
 .bonus-apply-all {

@@ -104,6 +104,31 @@
     return { rows, totalsBeforeBonus, totals };
   }
 
+  // Returns the minimum level each non-Keep building must be at for a player
+  // to be at Keep:targetKeep. Derived by replaying the REQUIREMENTS graph from
+  // scratch — whatever level a building reaches in the walk IS its minimum.
+  function computeMinimumLevels(targetKeep, requirements) {
+    const levels = {};
+    function ensure(b, target) {
+      let have = levels[b] != null ? levels[b] : 0;
+      while (have < target) {
+        const reqs = requirements[b] || [];
+        for (const slot of reqs) {
+          if (!Array.isArray(slot)) continue;
+          const req = slot[have];
+          if (req && req.building && req.level > 0) {
+            ensure(req.building, req.level);
+          }
+        }
+        have++;
+        levels[b] = have;
+      }
+    }
+    if (targetKeep > 0) ensure('Keep', targetKeep);
+    delete levels.Keep;
+    return levels;
+  }
+
   function formatNumber(n) {
     return Math.round(n).toLocaleString('en-US');
   }
@@ -124,5 +149,5 @@
     return `${minutes}m`;
   }
 
-  return { computeUpgradePlan, RESOURCE_KEYS, RESOURCE_TO_CATEGORY, formatNumber, formatResource, formatHours };
+  return { computeUpgradePlan, computeMinimumLevels, RESOURCE_KEYS, RESOURCE_TO_CATEGORY, formatNumber, formatResource, formatHours };
 }));
