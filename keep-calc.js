@@ -127,14 +127,17 @@
     // contributes zero to the total.
     const speed = Math.max(0, constructionSpeedPct || 0);
     const freeHours = Math.max(0, freeBuildTimeHours || 0);
-    let totalHours = 0;
+    // Round each row to the minute (the display granularity), then sum, so
+    // the total equals the sum of the per-building times shown in the table.
+    let totalMinutes = 0;
     for (const row of rows) {
       const raw = row.costs.hours || 0;
       const adjusted = Math.max(0, raw / (1 + speed) - freeHours);
-      row.adjustedHours = adjusted;
-      totalHours += adjusted;
+      const rounded = Math.round(adjusted * 60) / 60;
+      row.adjustedHours = rounded;
+      totalMinutes += Math.round(adjusted * 60);
     }
-    totals.hours = totalHours;
+    totals.hours = totalMinutes / 60;
 
     return { rows, totalsBeforeBonus, totals };
   }
