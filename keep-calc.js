@@ -92,15 +92,34 @@
     ensureLevel('Keep', targetKeep);
 
     // Per-resource efficiency divisor (in-game "+X% Cost Efficiency" model)
+    // applied per-building so the breakdown table reflects reduced costs.
+    const effByResource = {};
     for (const r of RESOURCE_KEYS) {
       const category = RESOURCE_TO_CATEGORY[r];
-      const eff = Math.max(0, efficiencyByCategory[category] || 0);
-      totals[r] = totalsBeforeBonus[r] / (1 + eff);
+      effByResource[r] = Math.max(0, efficiencyByCategory[category] || 0);
+    }
+    for (const row of rows) {
+      row.adjustedCosts = {};
+      for (const r of RESOURCE_KEYS) {
+        row.adjustedCosts[r] = (row.costs[r] || 0) / (1 + effByResource[r]);
+      }
     }
 
-    // Flat wood reduction after wood efficiency, floor at zero
-    const flatWood = Math.max(0, flatWoodReduction || 0);
-    totals.wood = Math.max(0, totals.wood - flatWood);
+    // Flat wood reduction is a single pool: drain it across rows in order
+    // so each row's wood floors at zero before the next row is affected.
+    let flatWoodRemaining = Math.max(0, flatWoodReduction || 0);
+    for (const row of rows) {
+      if (flatWoodRemaining <= 0) break;
+      const take = Math.min(flatWoodRemaining, row.adjustedCosts.wood);
+      row.adjustedCosts.wood -= take;
+      flatWoodRemaining -= take;
+    }
+
+    for (const r of RESOURCE_KEYS) {
+      let sum = 0;
+      for (const row of rows) sum += row.adjustedCosts[r];
+      totals[r] = sum;
+    }
 
     // Construction-speed divisor and free build time apply per-building: each
     // row's hours are divided by speed and then reduced by the flat free build

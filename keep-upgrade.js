@@ -197,7 +197,7 @@
       </tr></thead>`;
     const rows = plan.rows.map(r => {
       const cls = r.missing ? ' class="missing"' : '';
-      const cells = visibleResources.map(k => `<td>${r.missing ? '—' : globalThis.formatResource(r.costs[k] || 0)}</td>`).join('');
+      const cells = visibleResources.map(k => `<td>${r.missing ? '—' : globalThis.formatResource((r.adjustedCosts ? r.adjustedCosts[k] : r.costs[k]) || 0)}</td>`).join('');
       const time = r.missing ? '—' : globalThis.formatHours(r.adjustedHours != null ? r.adjustedHours : (r.costs.hours || 0));
       return `<tr${cls}><td>${r.building}</td><td>${r.fromLevel} → ${r.toLevel}</td>${cells}<td>${time}</td></tr>`;
     }).join('');
