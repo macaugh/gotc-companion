@@ -40,5 +40,10 @@
     return { rows, totals };
   }
 
-  return { TIERS, QUALITIES, floorToTier, computeTotals };
+  function bonusesForPiece(piece, qualityIndex) {
+    if (!piece || !Array.isArray(piece.bonuses)) return [];
+    return piece.bonuses.map(b => ({ prop: b.prop, value: b.curve[qualityIndex] }));
+  }
+
+  return { TIERS, QUALITIES, floorToTier, computeTotals, bonusesForPiece };
 }));

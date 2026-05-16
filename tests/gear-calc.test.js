@@ -92,3 +92,24 @@ test('computeTotals: totals sum per-row rounded values, not pre-rounded base', (
   });
   assert.equal(out.totals.materials.mat_silk, 21334);
 });
+
+const { bonusesForPiece } = require('../gear-calc.js');
+
+test('bonusesForPiece: picks the value at the chosen quality index', () => {
+  const piece = { bonuses: [
+    { prop: 'property_infantryattack_gear', curve: [0.014, 0.015, 0.016, 0.017, 0.018, 0.020] },
+    { prop: 'property_forgingspeed_gear',   curve: [0.10,  0.12,  0.14,  0.16,  0.18,  0.20]  },
+  ]};
+  assert.deepEqual(bonusesForPiece(piece, 0), [
+    { prop: 'property_infantryattack_gear', value: 0.014 },
+    { prop: 'property_forgingspeed_gear',   value: 0.10 },
+  ]);
+  assert.deepEqual(bonusesForPiece(piece, 5), [
+    { prop: 'property_infantryattack_gear', value: 0.020 },
+    { prop: 'property_forgingspeed_gear',   value: 0.20 },
+  ]);
+});
+
+test('bonusesForPiece: empty bonuses returns empty array', () => {
+  assert.deepEqual(bonusesForPiece({ bonuses: [] }, 3), []);
+});
