@@ -165,3 +165,31 @@ test('canCraft: reports specific shortfalls', () => {
   assert.equal(out.ok, false);
   assert.deepEqual(out.shortfalls, [{ mat: 'mat_silk', quality: 1, need: 10, have: 3 }]);
 });
+
+const { buildSequence } = require('../gear-calc.js');
+
+test('buildSequence: deducts inventory step by step', () => {
+  const rows = [
+    { id: 'a', quality: 1, time_sec: 0, materials: { mat_silk: 5 }, slot: 's', tier: 1 },
+    { id: 'b', quality: 1, time_sec: 0, materials: { mat_silk: 5 }, slot: 's', tier: 1 },
+  ];
+  const inv = { mat_silk: [0, 10, 0, 0, 0, 0] };
+  const seq = buildSequence(rows, inv);
+  assert.equal(seq.length, 2);
+  assert.equal(seq[0].ok, true);
+  assert.deepEqual(seq[0].remaining, { mat_silk: [0, 5, 0, 0, 0, 0] });
+  assert.equal(seq[1].ok, true);
+  assert.deepEqual(seq[1].remaining, { mat_silk: [0, 0, 0, 0, 0, 0] });
+});
+
+test('buildSequence: flags the first row that runs short', () => {
+  const rows = [
+    { id: 'a', quality: 1, time_sec: 0, materials: { mat_silk: 6 }, slot: 's', tier: 1 },
+    { id: 'b', quality: 1, time_sec: 0, materials: { mat_silk: 6 }, slot: 's', tier: 1 },
+  ];
+  const inv = { mat_silk: [0, 10, 0, 0, 0, 0] };
+  const seq = buildSequence(rows, inv);
+  assert.equal(seq[0].ok, true);
+  assert.equal(seq[1].ok, false);
+  assert.equal(seq[1].shortfalls[0].mat, 'mat_silk');
+});

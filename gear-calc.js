@@ -66,5 +66,42 @@
     return { ok: shortfalls.length === 0, shortfalls };
   }
 
-  return { TIERS, QUALITIES, floorToTier, computeTotals, bonusesForPiece, effectiveInventoryAt, canCraft };
+  // Deduct `need` units at exactly quality `q` from inventory, consuming
+  // lower-quality stock first (upgrading 4->1 as needed). Returns a NEW inv
+  // object. Caller must check feasibility via canCraft beforehand if it cares.
+  function deductOneMaterial(inv, mat, q, need) {
+    const row = (inv[mat] || [0,0,0,0,0,0]).slice();
+    let remainingAtQ = need;
+    for (let qi = 0; qi <= q && remainingAtQ > 0; qi++) {
+      const factor = Math.pow(4, q - qi);
+      const stockAtQ = Math.floor(row[qi] / factor);
+      const consumeAtQ = Math.min(stockAtQ, remainingAtQ);
+      row[qi] -= consumeAtQ * factor;
+      remainingAtQ -= consumeAtQ;
+    }
+    // Ensure non-negative (numerical safety).
+    for (let i = 0; i < row.length; i++) if (row[i] < 0) row[i] = 0;
+    return { ...inv, [mat]: row };
+  }
+
+  function buildSequence(rows, inventory) {
+    let inv = { ...inventory };
+    // Deep-copy each material row.
+    for (const m of Object.keys(inv)) inv[m] = (inv[m] || [0,0,0,0,0,0]).slice();
+    const out = [];
+    for (const row of rows) {
+      const check = canCraft(row, inv);
+      if (!check.ok) {
+        out.push({ ...row, ok: false, shortfalls: check.shortfalls, remaining: inv });
+        continue;
+      }
+      for (const [mat, need] of Object.entries(row.materials)) {
+        inv = deductOneMaterial(inv, mat, row.quality, need);
+      }
+      out.push({ ...row, ok: true, shortfalls: [], remaining: inv });
+    }
+    return out;
+  }
+
+  return { TIERS, QUALITIES, floorToTier, computeTotals, bonusesForPiece, effectiveInventoryAt, canCraft, buildSequence };
 }));
