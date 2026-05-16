@@ -16,5 +16,29 @@
     return max;
   }
 
-  return { TIERS, QUALITIES, floorToTier };
+  function computeTotals({ selection, steelCraftEff = 0, forgeTimeEff = 0 }) {
+    const costDiv = 1 + steelCraftEff;
+    const timeDiv = 1 + forgeTimeEff;
+    const rows = [];
+    const totals = { time_sec: 0, materials: {} };
+
+    for (const sel of selection) {
+      const { id, piece, quality } = sel;
+      const time_sec = piece.recipe.time_sec / timeDiv;
+      const materials = {};
+      for (const ing of piece.recipe.ingredients) {
+        materials[ing.mat] = Math.ceil(ing.amount / costDiv);
+      }
+      rows.push({ id, slot: piece.slot, tier: piece.tier, quality, time_sec, materials });
+
+      totals.time_sec += time_sec;
+      for (const [mat, amt] of Object.entries(materials)) {
+        totals.materials[mat] = (totals.materials[mat] || 0) + amt;
+      }
+    }
+
+    return { rows, totals };
+  }
+
+  return { TIERS, QUALITIES, floorToTier, computeTotals };
 }));
