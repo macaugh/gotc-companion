@@ -45,5 +45,26 @@
     return piece.bonuses.map(b => ({ prop: b.prop, value: b.curve[qualityIndex] }));
   }
 
-  return { TIERS, QUALITIES, floorToTier, computeTotals, bonusesForPiece };
+  function effectiveInventoryAt(inventory, mat, qualityIndex) {
+    const row = inventory && inventory[mat];
+    if (!row) return 0;
+    let total = 0;
+    for (let q = 0; q <= qualityIndex; q++) {
+      const amt = row[q] || 0;
+      const factor = Math.pow(4, qualityIndex - q);
+      total += Math.floor(amt / factor);
+    }
+    return total;
+  }
+
+  function canCraft(row, inventory) {
+    const shortfalls = [];
+    for (const [mat, need] of Object.entries(row.materials)) {
+      const have = effectiveInventoryAt(inventory, mat, row.quality);
+      if (have < need) shortfalls.push({ mat, quality: row.quality, need, have });
+    }
+    return { ok: shortfalls.length === 0, shortfalls };
+  }
+
+  return { TIERS, QUALITIES, floorToTier, computeTotals, bonusesForPiece, effectiveInventoryAt, canCraft };
 }));

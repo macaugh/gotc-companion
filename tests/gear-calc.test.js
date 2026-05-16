@@ -113,3 +113,55 @@ test('bonusesForPiece: picks the value at the chosen quality index', () => {
 test('bonusesForPiece: empty bonuses returns empty array', () => {
   assert.deepEqual(bonusesForPiece({ bonuses: [] }, 3), []);
 });
+
+const { effectiveInventoryAt, canCraft } = require('../gear-calc.js');
+
+test('effectiveInventoryAt: exact quality stock passes through', () => {
+  // inv[mat_silk] = { poor: 0, common: 0, fine: 0, exquisite: 0, epic: 100, legendary: 0 }
+  const inv = { mat_silk: [0, 0, 0, 0, 100, 0] };
+  assert.equal(effectiveInventoryAt(inv, 'mat_silk', 4), 100);
+});
+
+test('effectiveInventoryAt: lower quality is upgraded 4->1', () => {
+  // 16 poor + 4 common -> at common: floor(16/4) + 4 = 8 common available
+  const inv = { mat_silk: [16, 4, 0, 0, 0, 0] };
+  assert.equal(effectiveInventoryAt(inv, 'mat_silk', 1), 8);
+});
+
+test('effectiveInventoryAt: higher quality is NOT downgraded', () => {
+  // 100 legendary, asking for poor -> 0
+  const inv = { mat_silk: [0, 0, 0, 0, 0, 100] };
+  assert.equal(effectiveInventoryAt(inv, 'mat_silk', 0), 0);
+});
+
+test('effectiveInventoryAt: missing material returns 0', () => {
+  assert.equal(effectiveInventoryAt({}, 'mat_silk', 2), 0);
+});
+
+test('effectiveInventoryAt: chained upgrades — poor through to epic', () => {
+  // 4^4 = 256 poor -> 1 epic
+  const inv = { mat_silk: [256, 0, 0, 0, 0, 0] };
+  assert.equal(effectiveInventoryAt(inv, 'mat_silk', 4), 1);
+  // 255 poor -> 0 epic
+  const inv2 = { mat_silk: [255, 0, 0, 0, 0, 0] };
+  assert.equal(effectiveInventoryAt(inv2, 'mat_silk', 4), 0);
+});
+
+test('canCraft: returns ok=true when all materials satisfied', () => {
+  const piece = { recipe: { ingredients: [{ mat: 'mat_silk', amount: 10 }] }, slot: 's', tier: 1 };
+  const row = { id: 'r', slot: 's', tier: 1, quality: 1, time_sec: 0,
+                materials: { mat_silk: 10 } };
+  const inv = { mat_silk: [0, 10, 0, 0, 0, 0] };
+  const out = canCraft(row, inv);
+  assert.equal(out.ok, true);
+  assert.deepEqual(out.shortfalls, []);
+});
+
+test('canCraft: reports specific shortfalls', () => {
+  const row = { id: 'r', slot: 's', tier: 1, quality: 1, time_sec: 0,
+                materials: { mat_silk: 10, mat_hide: 5 } };
+  const inv = { mat_silk: [0, 3, 0, 0, 0, 0], mat_hide: [0, 5, 0, 0, 0, 0] };
+  const out = canCraft(row, inv);
+  assert.equal(out.ok, false);
+  assert.deepEqual(out.shortfalls, [{ mat: 'mat_silk', quality: 1, need: 10, have: 3 }]);
+});
