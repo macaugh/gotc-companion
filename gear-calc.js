@@ -42,7 +42,7 @@
 
   function bonusesForPiece(piece, qualityIndex) {
     if (!piece || !Array.isArray(piece.bonuses)) return [];
-    return piece.bonuses.map(b => ({ prop: b.prop, value: b.curve[qualityIndex] }));
+    return piece.bonuses.map(b => ({ prop: b.prop, value: b.curve ? b.curve[qualityIndex] : undefined }));
   }
 
   function effectiveInventoryAt(inventory, mat, qualityIndex) {
@@ -79,8 +79,7 @@
       row[qi] -= consumeAtQ * factor;
       remainingAtQ -= consumeAtQ;
     }
-    // Ensure non-negative (numerical safety).
-    for (let i = 0; i < row.length; i++) if (row[i] < 0) row[i] = 0;
+    // Invariant: row[qi] stays >= 0 (consumeAtQ * factor <= row[qi] by construction).
     return { ...inv, [mat]: row };
   }
 
