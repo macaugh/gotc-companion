@@ -14,7 +14,7 @@ A growing toolkit of live calculators and planners for **Game of Thrones: Conque
 | [**Night's Watch: The Builders**](#nights-watch-the-builders) (`keep-upgrade.html`) | Plan a Keep upgrade: total resources and build time to take your Keep from one level to another, with cost-efficiency and time bonuses applied. |
 | [**Gendry's Forge**](#gendrys-forge) (`gendrys-forge.html`) | Plan Lords-gear crafting: cost, time, and bonus values at a chosen quality, with material-inventory awareness. |
 
-Both pages share a nav strip at the top, the same dark gold-on-black styling, and the favicon. State is encoded into the URL for sharing.
+All pages share a nav strip at the top, the same dark gold-on-black styling, and the favicon. State is encoded into the URL for sharing.
 
 ---
 
