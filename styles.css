@@ -528,7 +528,6 @@
     color: var(--gold-bright);
     border-bottom-color: var(--gold-deep);
   }
-}
 
 /* Builder-specific */
 .bonus-grid {
@@ -656,3 +655,43 @@
   background: var(--bg-card);
   color: var(--gold-pale);
 }
+
+/* ===========================================================
+   Gendry's Forge — calculator-specific rules.
+   Generic enough to live in the shared stylesheet because the
+   site uses one shared theme across all pages.
+   =========================================================== */
+
+.hidden { display: none; }
+
+/* Totals table — adjusted material costs per piece + totals row */
+.totals { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+.totals th,
+.totals td {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid rgba(168, 132, 47, 0.2);
+  text-align: right;
+}
+.totals th:first-child,
+.totals td:first-child { text-align: left; }
+.totals .totals-row th {
+  border-top: 1px solid var(--gold-deep, #a8842f);
+  font-weight: 600;
+}
+
+/* Per-material × per-quality inventory grid */
+.inventory { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+.inventory th,
+.inventory td { padding: 0.25rem 0.4rem; text-align: left; }
+.inventory input { width: 6rem; }
+
+/* Sequence view — ordered craft plan */
+.sequence { padding-left: 1.5rem; margin: 0.25rem 0; }
+.sequence li { padding: 0.15rem 0; }
+
+/* Status indicators */
+.ok  { color: #6fbf73; font-weight: 500; }
+.bad { color: var(--blood, #c25656); font-weight: 500; }
+
+/* Inline help text used throughout the page */
+.hint { color: rgba(255, 255, 255, 0.55); font-style: italic; font-size: 0.9em; }
