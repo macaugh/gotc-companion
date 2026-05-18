@@ -2,7 +2,7 @@
 // Reads gear-calc/*.csv and emits gear-data.generated.js.
 // Filtered to kind == "standard" (Lords gear) for v1.
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
