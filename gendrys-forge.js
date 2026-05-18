@@ -193,6 +193,54 @@
     });
   }
 
+  function renderQueueTable() {
+    const tbody = document.querySelector('#queue-table tbody');
+    const maxTier = floorToTier(state.houseLevel) || 1;
+    const availableTiers = TIERS.filter(t => t <= maxTier);
+    tbody.innerHTML = state.queue.map((q, idx) => {
+      const slotOpts = Object.entries(SLOTS)
+        .map(([id, label]) => `<option value="${id}" ${q.slot === id ? 'selected' : ''}>${label}</option>`).join('');
+      const tierOpts = availableTiers
+        .map(t => `<option value="${t}" ${q.tier === t ? 'selected' : ''}>${t}</option>`).join('');
+      const pieceOpts = (piecesBySlot[q.slot] || [])
+        .filter(p => p.tier === q.tier)
+        .map(p => `<option value="${p.id}" ${q.pieceId === p.id ? 'selected' : ''}>${p.id}</option>`).join('');
+      const qualOpts = QUALITIES
+        .map((qn, i) => `<option value="${i}" ${q.quality === i ? 'selected' : ''}>${qn}</option>`).join('');
+      return `<tr data-idx="${idx}">
+        <td><select class="val-select" data-field="slot">${slotOpts}</select></td>
+        <td><select class="val-select" data-field="tier">${tierOpts}</select></td>
+        <td><select class="val-select" data-field="pieceId"><option value="">—</option>${pieceOpts}</select></td>
+        <td><select class="val-select" data-field="quality">${qualOpts}</select></td>
+        <td><button type="button" data-field="remove">×</button></td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('select, button').forEach(el => {
+      el.addEventListener('change', onQueueRowEvent);
+      el.addEventListener('click', onQueueRowEvent);
+    });
+  }
+
+  function onQueueRowEvent(e) {
+    const tr = e.target.closest('tr');
+    const idx = Number(tr.dataset.idx);
+    const field = e.target.dataset.field;
+    const row = state.queue[idx];
+    if (field === 'remove') {
+      state.queue.splice(idx, 1);
+    } else if (field === 'tier' || field === 'slot') {
+      row[field] = field === 'tier' ? Number(e.target.value) : e.target.value;
+      row.pieceId = ''; // reset piece when slot/tier changes
+    } else if (field === 'quality') {
+      row.quality = Number(e.target.value);
+    } else if (field === 'pieceId') {
+      row.pieceId = e.target.value;
+    }
+    renderQueueTable();
+    render();
+  }
+
   function setModeUI() {
     const isLoadout = state.mode === 'loadout';
     els.loadoutPanel.classList.toggle('hidden', !isLoadout);
@@ -205,6 +253,7 @@
     els.houseLevel.addEventListener('input', () => {
       state.houseLevel = Number(els.houseLevel.value) || 1;
       renderSlotPickers();
+      renderQueueTable();
       render();
     });
     els.modeRadios.forEach(r => r.addEventListener('change', () => {
@@ -230,6 +279,13 @@
       state.forgeTimeEff = (Number(els.forgeEff.value) || 0) / 100;
       render();
     });
+    document.querySelector('#queue-add').addEventListener('click', () => {
+      const maxTier = floorToTier(state.houseLevel) || 1;
+      const firstSlot = Object.keys(SLOTS)[0];
+      state.queue.push({ slot: firstSlot, tier: maxTier, pieceId: '', quality: 4 });
+      renderQueueTable();
+      render();
+    });
   }
 
   function init() {
@@ -237,6 +293,7 @@
     setModeUI();
     renderSlotPickers();
     wireEvents();
+    renderQueueTable();
     render();
   }
   init();
