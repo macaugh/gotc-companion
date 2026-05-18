@@ -100,6 +100,7 @@
     renderTotals();
     renderSequence();
     renderInventoryGrid();
+    encodeStateToURL();
   }
 
   function renderTotals() {
@@ -249,6 +250,54 @@
     els.queueHeading.classList.toggle('hidden', isLoadout);
   }
 
+  function encodeStateToURL() {
+    const params = new URLSearchParams();
+    if (state.houseLevel !== 34) params.set('hl', state.houseLevel);
+    if (state.mode !== 'loadout') params.set('mode', state.mode);
+    if (state.targetTier !== 30) params.set('t', state.targetTier);
+    if (state.targetQuality !== 4) params.set('q', state.targetQuality);
+    for (const [slot, id] of Object.entries(state.loadout)) {
+      if (id) params.set('g.' + slot, id);
+    }
+    if (state.queue.length) {
+      params.set('qu', state.queue
+        .map(q => `${q.slot}:${q.tier}:${q.pieceId}:${q.quality}`).join(','));
+    }
+    if (state.steelCraftEff) params.set('se', (state.steelCraftEff * 100).toString());
+    if (state.forgeTimeEff) params.set('fe', (state.forgeTimeEff * 100).toString());
+    for (const [m, row] of Object.entries(state.inventory)) {
+      for (let q = 0; q < row.length; q++) {
+        if (row[q]) params.set(`inv.${m}.${q}`, row[q]);
+      }
+    }
+    const qs = params.toString();
+    history.replaceState(null, '', qs ? '?' + qs : location.pathname);
+  }
+
+  function decodeURLToState() {
+    const p = new URLSearchParams(location.search);
+    if (p.has('hl')) state.houseLevel = Number(p.get('hl'));
+    if (p.has('mode')) state.mode = p.get('mode');
+    if (p.has('t')) state.targetTier = Number(p.get('t'));
+    if (p.has('q')) state.targetQuality = Number(p.get('q'));
+    if (p.has('se')) state.steelCraftEff = Number(p.get('se')) / 100;
+    if (p.has('fe')) state.forgeTimeEff = Number(p.get('fe')) / 100;
+    if (p.has('qu')) {
+      state.queue = p.get('qu').split(',').filter(Boolean).map(s => {
+        const [slot, tier, pieceId, quality] = s.split(':');
+        return { slot, tier: Number(tier), pieceId, quality: Number(quality) };
+      });
+    }
+    for (const [k, v] of p.entries()) {
+      if (k.startsWith('g.')) state.loadout[k.slice(2)] = v;
+      if (k.startsWith('inv.')) {
+        const [, mat, qIdx] = k.split('.');
+        if (!state.inventory[mat]) state.inventory[mat] = [0,0,0,0,0,0];
+        state.inventory[mat][Number(qIdx)] = Number(v);
+      }
+    }
+  }
+
   function wireEvents() {
     els.houseLevel.addEventListener('input', () => {
       state.houseLevel = Number(els.houseLevel.value) || 1;
@@ -289,7 +338,13 @@
   }
 
   function init() {
+    decodeURLToState();
     populateTierAndQuality();
+    els.houseLevel.value = state.houseLevel;
+    els.steelEff.value = state.steelCraftEff * 100;
+    els.forgeEff.value = state.forgeTimeEff * 100;
+    const modeRadio = document.querySelector(`input[name=mode][value="${state.mode}"]`);
+    if (modeRadio) modeRadio.checked = true;
     setModeUI();
     renderSlotPickers();
     wireEvents();
