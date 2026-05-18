@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gendry's Forge — GoT Conquest Calculator</title>
+<meta name="description" content="Plan Lords-gear crafting in Game of Thrones: Conquest: cost, time, and bonus values at a chosen quality.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="index.html">Prestige Ledger</a>
+    <a href="keep-upgrade.html">Night's Watch: The Builders</a>
+    <a href="gendrys-forge.html" class="current">Gendry's Forge</a>
+  </nav>
+
+  <div class="crest">⚔ ✦ ⚔</div>
+  <h1 class="title">Gendry's Forge</h1>
+  <p class="subtitle">Plan a Lords-gear loadout: materials, time, and bonuses</p>
+
+  <div class="panel" id="wrap">
+
+    <h2>Goal &amp; Target</h2>
+    <div class="row">
+      <label>House Level</label>
+      <input type="number" id="house-level" class="val-input" min="1" max="50" value="34" />
+      <span class="hint">Max craftable tier: <strong id="max-tier">30</strong></span>
+    </div>
+    <div class="row">
+      <label>Mode</label>
+      <label><input type="radio" name="mode" value="loadout" checked /> Loadout</label>
+      <label><input type="radio" name="mode" value="queue" /> Queue</label>
+    </div>
+
+    <h2 id="loadout-heading">Loadout</h2>
+    <div id="loadout-panel">
+      <div class="row">
+        <label>Target tier</label>
+        <select id="target-tier" class="val-select"></select>
+      </div>
+      <div class="row">
+        <label>Target quality</label>
+        <select id="target-quality" class="val-select"></select>
+      </div>
+      <div id="slot-pickers"></div>
+    </div>
+
+    <h2 id="queue-heading" class="hidden">Queue</h2>
+    <div id="queue-panel" class="hidden">
+      <button type="button" id="queue-add">+ Add piece</button>
+      <table id="queue-table">
+        <thead><tr>
+          <th>Slot</th><th>Tier</th><th>Piece</th><th>Quality</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h2>Crafting Efficiency</h2>
+    <div class="row">
+      <label>Steel Crafting Efficiency (%)</label>
+      <input type="number" id="steel-eff" class="val-input" value="0" step="0.1" />
+    </div>
+    <div class="row">
+      <label>Forge Time Efficiency (%)</label>
+      <input type="number" id="forge-eff" class="val-input" value="0" step="0.1" />
+    </div>
+
+    <details id="inventory-details">
+      <summary><h2 style="display:inline">Material Inventory</h2></summary>
+      <div id="inventory-grid"></div>
+    </details>
+
+    <h2>Totals</h2>
+    <div id="totals-mount"></div>
+
+    <details>
+      <summary><h2 style="display:inline">Sequence</h2></summary>
+      <div id="sequence-mount"></div>
+    </details>
+
+  </div>
+
+  <script src="gear-data.generated.js"></script>
+  <script src="gear-calc.js"></script>
+  <script src="gendrys-forge.js"></script>
+</body>
+</html>
