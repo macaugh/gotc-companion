@@ -12,6 +12,8 @@
 </head>
 <body>
 
+<div class="page">
+
   <nav class="nav">
     <a href="index.html">Prestige Ledger</a>
     <a href="keep-upgrade.html">Night's Watch: The Builders</a>
@@ -27,17 +29,21 @@
     <h2>Goal &amp; Target</h2>
     <div class="row">
       <label>House Level</label>
-      <input type="number" id="house-level" class="val-input" min="1" max="50" value="34" />
+      <input type="text" inputmode="numeric" id="house-level" class="val-input" value="34" />
       <span class="hint">Max craftable tier: <strong id="max-tier">30</strong></span>
     </div>
     <div class="row">
       <label>Mode</label>
-      <label><input type="radio" name="mode" value="loadout" checked /> Loadout</label>
-      <label><input type="radio" name="mode" value="queue" /> Queue</label>
+      <div class="radio-group" id="mode-group">
+        <div class="radio-opt active" data-mode="loadout">Loadout</div>
+        <div class="radio-opt" data-mode="queue">Queue</div>
+      </div>
     </div>
 
-    <h2 id="loadout-heading">Loadout</h2>
+    <div class="divider"></div>
+
     <div id="loadout-panel">
+      <h2 id="loadout-heading">Loadout</h2>
       <div class="row">
         <label>Target tier</label>
         <select id="target-tier" class="val-select"></select>
@@ -49,10 +55,12 @@
       <div id="slot-pickers"></div>
     </div>
 
-    <h2 id="queue-heading" class="hidden">Queue</h2>
     <div id="queue-panel" class="hidden">
-      <button type="button" id="queue-add">+ Add piece</button>
-      <table id="queue-table">
+      <h2 id="queue-heading">Queue</h2>
+      <div style="margin-bottom: 1rem;">
+        <button type="button" id="queue-add" class="btn-gold">+ Add piece</button>
+      </div>
+      <table id="queue-table" class="queue-table">
         <thead><tr>
           <th>Slot</th><th>Tier</th><th>Piece</th><th>Quality</th><th></th>
         </tr></thead>
@@ -60,33 +68,47 @@
       </table>
     </div>
 
+    <div class="divider"></div>
+
     <h2>Crafting Efficiency</h2>
     <div class="row">
       <label>Steel Crafting Efficiency (%)</label>
-      <input type="number" id="steel-eff" class="val-input" value="0" step="0.1" />
+      <input type="text" inputmode="decimal" id="steel-eff" class="val-input" value="0" />
     </div>
     <div class="row">
       <label>Forge Time Efficiency (%)</label>
-      <input type="number" id="forge-eff" class="val-input" value="0" step="0.1" />
+      <input type="text" inputmode="decimal" id="forge-eff" class="val-input" value="0" />
     </div>
 
-    <details id="inventory-details">
-      <summary><h2 style="display:inline">Material Inventory</h2></summary>
+    <div class="divider"></div>
+
+    <details class="collapse" id="inventory-details">
+      <summary>Material Inventory</summary>
       <div id="inventory-grid"></div>
     </details>
+
+    <div class="divider"></div>
 
     <h2>Totals</h2>
     <div id="totals-mount"></div>
 
-    <details>
-      <summary><h2 style="display:inline">Sequence</h2></summary>
+    <div class="divider"></div>
+
+    <details class="collapse">
+      <summary>Sequence</summary>
       <div id="sequence-mount"></div>
     </details>
 
   </div>
 
-  <script src="gear-data.generated.js"></script>
-  <script src="gear-calc.js"></script>
-  <script src="gendrys-forge.js"></script>
+  <footer>
+    <p>Forged in fire &amp; vanilla JavaScript · <a href="https://github.com/macaugh/gotc-companion" target="_blank" rel="noopener">view source</a></p>
+  </footer>
+
+</div>
+
+<script src="gear-data.generated.js"></script>
+<script src="gear-calc.js"></script>
+<script src="gendrys-forge.js"></script>
 </body>
 </html>

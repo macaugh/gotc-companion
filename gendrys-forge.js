@@ -12,6 +12,25 @@
     piecesBySlot[s].sort((a, b) => a.tier - b.tier || a.id.localeCompare(b.id));
   }
 
+  // Turn raw identifiers into short display labels: "ITEM_MATERIALS_LEATHERSTRAP"
+  // or "mat_leatherstrap" -> "Leatherstrap"; "eq_standard_helmet_silkchapeau"
+  // -> "Silkchapeau"; "property_forgingsteelcost_gear" -> "Forging Steel Cost".
+  function prettify(id) {
+    if (!id) return '';
+    let s = String(id);
+    s = s.replace(/^ITEM_MATERIALS_/i, '')
+         .replace(/^mat_/, '')
+         .replace(/^eq_standard_[a-z]+_/, '')
+         .replace(/^property_/, '')
+         .replace(/_gear$/, '');
+    s = s.replace(/_/g, ' ');
+    // Insert spaces between lowerUpper or letterDigit transitions for camel/concat ids.
+    s = s.replace(/([a-z])([A-Z])/g, '$1 $2');
+    // Title case each word.
+    return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
+  const matLabel = (m) => prettify(MATERIALS[m] || m);
+
   // State
   const state = {
     houseLevel: 34,
@@ -29,7 +48,7 @@
   const els = {
     houseLevel: $('#house-level'),
     maxTier:    $('#max-tier'),
-    modeRadios: document.querySelectorAll('input[name=mode]'),
+    modeGroup:  document.querySelectorAll('#mode-group .radio-opt'),
     targetTier: $('#target-tier'),
     targetQuality: $('#target-quality'),
     slotPickers: $('#slot-pickers'),
@@ -61,7 +80,7 @@
     const html = Object.entries(SLOTS).map(([slotId, label]) => {
       const opts = (piecesBySlot[slotId] || [])
         .filter(p => p.tier === tier)
-        .map(p => `<option value="${p.id}">${p.id}</option>`)
+        .map(p => `<option value="${p.id}">${prettify(p.id)}</option>`)
         .join('');
       return `<div class="row"><label>${label}</label>
         <select class="val-select" data-slot="${slotId}">
@@ -88,11 +107,11 @@
     if (state.mode === 'queue') {
       return state.queue
         .filter(q => q.pieceId && GEAR[q.pieceId])
-        .map(q => ({ id: q.pieceId + ':' + q.quality, piece: GEAR[q.pieceId], quality: q.quality }));
+        .map((q, i) => ({ id: 'q' + i, pieceId: q.pieceId, piece: GEAR[q.pieceId], quality: q.quality }));
     }
     return Object.entries(state.loadout)
       .filter(([, id]) => id && GEAR[id])
-      .map(([slot, id]) => ({ id: slot, piece: GEAR[id], quality: state.targetQuality }));
+      .map(([slot, id]) => ({ id: slot, pieceId: id, piece: GEAR[id], quality: state.targetQuality }));
   }
 
   function render() {
@@ -117,13 +136,14 @@
 
     const mats = Object.keys(totals.materials).sort();
     let html = '<table class="totals"><thead><tr><th>Piece</th><th>Tier</th><th>Quality</th><th>Time (h)</th>';
-    for (const m of mats) html += `<th>${MATERIALS[m] || m}</th>`;
+    for (const m of mats) html += `<th>${matLabel(m)}</th>`;
     html += '<th>Bonuses</th></tr></thead><tbody>';
     for (const r of rows) {
-      const piece = selection.find(s => s.id === r.id).piece;
+      const sel = selection.find(s => s.id === r.id);
+      const piece = sel.piece;
       const bonusList = bonusesForPiece(piece, r.quality)
-        .map(b => `<li>${b.prop}: ${(b.value * 100).toFixed(2)}%</li>`).join('');
-      html += `<tr><td>${r.id}</td><td>${r.tier}</td><td>${QUALITIES[r.quality]}</td>` +
+        .map(b => `<li>${prettify(b.prop)}: ${(b.value * 100).toFixed(2)}%</li>`).join('');
+      html += `<tr><td>${prettify(sel.pieceId)}</td><td>${r.tier}</td><td>${QUALITIES[r.quality]}</td>` +
               `<td>${(r.time_sec / 3600).toFixed(2)}</td>`;
       for (const m of mats) html += `<td>${(r.materials[m] || 0).toLocaleString()}</td>`;
       html += `<td><details><summary>${piece.bonuses.length} props</summary><ul>${bonusList}</ul></details></td></tr>`;
@@ -138,7 +158,8 @@
     else {
       const firstFail = seq.find(s => !s.ok);
       const sf = firstFail.shortfalls[0];
-      html += `<p class="bad">Not craftable: need ${sf.need - sf.have} more ${MATERIALS[sf.mat] || sf.mat} @ ${QUALITIES[sf.quality]} for "${firstFail.id}"</p>`;
+      const failSel = selection.find(s => s.id === firstFail.id);
+      html += `<p class="bad">Not craftable: need ${sf.need - sf.have} more ${matLabel(sf.mat)} @ ${QUALITIES[sf.quality]} for "${prettify(failSel.pieceId)}"</p>`;
     }
 
     els.totalsMount.innerHTML = html;
@@ -155,10 +176,11 @@
     const seq = buildSequence(rows, state.inventory);
     let html = '<ol class="sequence">';
     for (const s of seq) {
+      const sel = selection.find(x => x.id === s.id);
       const status = s.ok ? '✓' : '✗';
       const detail = s.ok ? '' :
-        ` (need ${s.shortfalls[0].need - s.shortfalls[0].have} more ${MATERIALS[s.shortfalls[0].mat] || s.shortfalls[0].mat} @ ${QUALITIES[s.shortfalls[0].quality]})`;
-      html += `<li>${status} ${s.id} — ${QUALITIES[s.quality]}${detail}</li>`;
+        ` (need ${s.shortfalls[0].need - s.shortfalls[0].have} more ${matLabel(s.shortfalls[0].mat)} @ ${QUALITIES[s.shortfalls[0].quality]})`;
+      html += `<li>${status} ${prettify(sel.pieceId)} — ${QUALITIES[s.quality]}${detail}</li>`;
     }
     html += '</ol>';
     els.sequenceMount.innerHTML = html;
@@ -176,7 +198,7 @@
     const header = '<tr><th>Material</th>' + QUALITIES.map(q => `<th>${q}</th>`).join('') + '</tr>';
     const body = [...mats].sort().map(m => {
       const row = state.inventory[m] || [0,0,0,0,0,0];
-      return `<tr><td>${MATERIALS[m] || m}</td>` +
+      return `<tr><td>${matLabel(m)}</td>` +
         row.map((v, q) =>
           `<td><input type="number" min="0" class="val-input" data-mat="${m}" data-q="${q}" value="${v}" /></td>`
         ).join('') + '</tr>';
@@ -205,7 +227,7 @@
         .map(t => `<option value="${t}" ${q.tier === t ? 'selected' : ''}>${t}</option>`).join('');
       const pieceOpts = (piecesBySlot[q.slot] || [])
         .filter(p => p.tier === q.tier)
-        .map(p => `<option value="${p.id}" ${q.pieceId === p.id ? 'selected' : ''}>${p.id}</option>`).join('');
+        .map(p => `<option value="${p.id}" ${q.pieceId === p.id ? 'selected' : ''}>${prettify(p.id)}</option>`).join('');
       const qualOpts = QUALITIES
         .map((qn, i) => `<option value="${i}" ${q.quality === i ? 'selected' : ''}>${qn}</option>`).join('');
       return `<tr data-idx="${idx}">
@@ -305,8 +327,9 @@
       renderQueueTable();
       render();
     });
-    els.modeRadios.forEach(r => r.addEventListener('change', () => {
-      state.mode = document.querySelector('input[name=mode]:checked').value;
+    els.modeGroup.forEach(opt => opt.addEventListener('click', () => {
+      state.mode = opt.dataset.mode;
+      els.modeGroup.forEach(o => o.classList.toggle('active', o === opt));
       setModeUI();
       render();
     }));
@@ -343,8 +366,7 @@
     els.houseLevel.value = state.houseLevel;
     els.steelEff.value = state.steelCraftEff * 100;
     els.forgeEff.value = state.forgeTimeEff * 100;
-    const modeRadio = document.querySelector(`input[name=mode][value="${state.mode}"]`);
-    if (modeRadio) modeRadio.checked = true;
+    els.modeGroup.forEach(o => o.classList.toggle('active', o.dataset.mode === state.mode));
     setModeUI();
     renderSlotPickers();
     wireEvents();

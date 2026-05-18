@@ -664,6 +664,9 @@
 
 .hidden { display: none; }
 
+/* Totals: scroll horizontally when the column set is wider than the panel. */
+#totals-mount { overflow-x: auto; max-width: 100%; }
+
 /* Totals table — adjusted material costs per piece + totals row */
 .totals { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
 .totals th,
@@ -694,4 +697,117 @@
 .bad { color: var(--blood, #c25656); font-weight: 500; }
 
 /* Inline help text used throughout the page */
-.hint { color: rgba(255, 255, 255, 0.55); font-style: italic; font-size: 0.9em; }
+.hint { color: var(--gold-faint); font-style: italic; font-size: 13px; }
+
+/* Themed collapsible — summary styled like an h2 with the same gold accent rule. */
+.collapse { margin: 0; }
+.collapse > summary {
+  list-style: none;
+  cursor: pointer;
+  font-family: 'Cinzel', Georgia, serif;
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 500;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.collapse > summary::-webkit-details-marker { display: none; }
+.collapse > summary::before {
+  content: "▸";
+  color: var(--gold-dark);
+  flex: 0 0 auto;
+  font-size: 10px;
+}
+.collapse[open] > summary::before { content: "▾"; }
+.collapse > summary::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--gold-dark);
+}
+.collapse > summary:hover { color: var(--gold-bright); }
+
+/* Gold action button, matching the site's button feel. */
+.btn-gold {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-pale);
+  background: var(--bg-card);
+  border: 1px solid var(--gold-dark);
+  border-radius: 3px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.btn-gold:hover {
+  background: var(--bg-card-raised);
+  color: var(--gold-bright);
+  border-color: var(--gold);
+}
+
+/* Queue table */
+.queue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.queue-table th,
+.queue-table td {
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid rgba(168, 132, 47, 0.15);
+  text-align: left;
+  font-size: 12px;
+}
+.queue-table th {
+  font-family: 'Cinzel', Georgia, serif;
+  color: var(--gold-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.queue-table .val-select { width: 100%; }
+.queue-table td:last-child { text-align: right; }
+.queue-table button {
+  background: transparent;
+  border: 1px solid var(--gold-dark);
+  color: var(--gold-faint);
+  border-radius: 3px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  line-height: 1;
+}
+.queue-table button:hover { color: var(--blood); border-color: var(--blood); }
+
+/* Totals table: match the keep calc's breakdown look more closely. */
+.totals {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  font-size: 12px;
+}
+.totals th {
+  font-family: 'Cinzel', Georgia, serif;
+  color: var(--gold-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.totals tbody tr:hover td { background: rgba(168, 132, 47, 0.05); }
+
+/* Inventory grid — make the per-quality inputs narrower so they don't overflow. */
+.inventory th {
+  font-family: 'Cinzel', Georgia, serif;
+  color: var(--gold-dim);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.inventory input.val-input { width: 5rem; flex: none; }
+.inventory td:first-child { color: var(--gold-pale); }
