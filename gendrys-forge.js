@@ -1,6 +1,19 @@
 (function () {
-  const { GEAR, MATERIALS, SLOTS, TIERS, QUALITIES } = window;
+  const { GEAR: RAW_GEAR, MATERIALS, SLOTS, TIERS, QUALITIES, PROPS, CURVES } = window;
   const { floorToTier, computeTotals, bonusesForPiece, canCraft, buildSequence } = window;
+
+  // The generated data stores bonuses interned as [propIdx, curveIdx] pairs
+  // (so the data file stays under a few MB). Resolve them once into the
+  // engine's expected { prop, curve } shape so the pure engine stays unchanged.
+  const GEAR = {};
+  for (const [id, p] of Object.entries(RAW_GEAR)) {
+    GEAR[id] = {
+      slot: p.slot,
+      tier: p.tier,
+      recipe: p.recipe,
+      bonuses: p.bonuses.map(([pi, ci]) => ({ prop: PROPS[pi], curve: CURVES[ci] })),
+    };
+  }
 
   // Index pieces by slot for fast picker rendering.
   const piecesBySlot = {};
@@ -42,6 +55,8 @@
     steelCraftEff: 0, // stored as fraction (0.5 = 50%)
     forgeTimeEff: 0,
     inventory: {},    // mat -> [poor..legendary]
+    bonusFilter: '',  // comma-separated terms; pieces match if any bonus's
+                      // prettified prop name contains any term (case-insensitive)
   };
 
   const $ = (sel) => document.querySelector(sel);
@@ -61,7 +76,21 @@
     totalsMount: $('#totals-mount'),
     sequenceMount: $('#sequence-mount'),
     inventoryGrid: $('#inventory-grid'),
+    bonusFilter: $('#bonus-filter'),
   };
+
+  // Returns the active filter terms, lowercased and trimmed. Empty = no filter.
+  function bonusFilterTerms() {
+    return state.bonusFilter
+      .split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+  }
+  // Whether a piece passes the current filter. Empty filter passes everything.
+  function pieceMatchesFilter(p) {
+    const terms = bonusFilterTerms();
+    if (terms.length === 0) return true;
+    const labels = p.bonuses.map(b => prettify(b.prop).toLowerCase());
+    return labels.some(label => terms.some(t => label.includes(t)));
+  }
 
   function populateTierAndQuality() {
     els.targetTier.innerHTML = TIERS.map(t => `<option value="${t}">${t}</option>`).join('');
@@ -78,14 +107,19 @@
     els.targetTier.value = tier;
 
     const html = Object.entries(SLOTS).map(([slotId, label]) => {
-      const opts = (piecesBySlot[slotId] || [])
-        .filter(p => p.tier === tier)
+      const matches = (piecesBySlot[slotId] || [])
+        .filter(p => p.tier === tier && pieceMatchesFilter(p));
+      const opts = matches
         .map(p => `<option value="${p.id}">${prettify(p.id)}</option>`)
         .join('');
+      const count = matches.length;
+      const note = bonusFilterTerms().length && count === 0
+        ? ` <span class="hint">no matches at this tier</span>`
+        : ` <span class="hint">${count} ${count === 1 ? 'option' : 'options'}</span>`;
       return `<div class="row"><label>${label}</label>
         <select class="val-select" data-slot="${slotId}">
           <option value="">— none —</option>${opts}
-        </select></div>`;
+        </select>${note}</div>`;
     }).join('');
     els.slotPickers.innerHTML = html;
 
@@ -226,7 +260,7 @@
       const tierOpts = availableTiers
         .map(t => `<option value="${t}" ${q.tier === t ? 'selected' : ''}>${t}</option>`).join('');
       const pieceOpts = (piecesBySlot[q.slot] || [])
-        .filter(p => p.tier === q.tier)
+        .filter(p => p.tier === q.tier && pieceMatchesFilter(p))
         .map(p => `<option value="${p.id}" ${q.pieceId === p.id ? 'selected' : ''}>${prettify(p.id)}</option>`).join('');
       const qualOpts = QUALITIES
         .map((qn, i) => `<option value="${i}" ${q.quality === i ? 'selected' : ''}>${qn}</option>`).join('');
@@ -287,6 +321,7 @@
     }
     if (state.steelCraftEff) params.set('se', (state.steelCraftEff * 100).toString());
     if (state.forgeTimeEff) params.set('fe', (state.forgeTimeEff * 100).toString());
+    if (state.bonusFilter) params.set('bf', state.bonusFilter);
     for (const [m, row] of Object.entries(state.inventory)) {
       for (let q = 0; q < row.length; q++) {
         if (row[q]) params.set(`inv.${m}.${q}`, row[q]);
@@ -304,6 +339,7 @@
     if (p.has('q')) state.targetQuality = Number(p.get('q'));
     if (p.has('se')) state.steelCraftEff = Number(p.get('se')) / 100;
     if (p.has('fe')) state.forgeTimeEff = Number(p.get('fe')) / 100;
+    if (p.has('bf')) state.bonusFilter = p.get('bf');
     if (p.has('qu')) {
       state.queue = p.get('qu').split(',').filter(Boolean).map(s => {
         const [slot, tier, pieceId, quality] = s.split(':');
@@ -351,6 +387,12 @@
       state.forgeTimeEff = (Number(els.forgeEff.value) || 0) / 100;
       render();
     });
+    els.bonusFilter.addEventListener('input', () => {
+      state.bonusFilter = els.bonusFilter.value;
+      renderSlotPickers();
+      renderQueueTable();
+      render();
+    });
     document.querySelector('#queue-add').addEventListener('click', () => {
       const maxTier = floorToTier(state.houseLevel) || 1;
       const firstSlot = Object.keys(SLOTS)[0];
@@ -366,6 +408,7 @@
     els.houseLevel.value = state.houseLevel;
     els.steelEff.value = state.steelCraftEff * 100;
     els.forgeEff.value = state.forgeTimeEff * 100;
+    els.bonusFilter.value = state.bonusFilter;
     els.modeGroup.forEach(o => o.classList.toggle('active', o.dataset.mode === state.mode));
     setModeUI();
     renderSlotPickers();

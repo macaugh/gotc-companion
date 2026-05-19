@@ -811,3 +811,6 @@
 }
 .inventory input.val-input { width: 5rem; flex: none; }
 .inventory td:first-child { color: var(--gold-pale); }
+
+/* Bonus filter input is wider than the default .val-input numeric width. */
+.bonus-filter-input { flex: 1 1 auto; min-width: 220px; text-align: left; }
