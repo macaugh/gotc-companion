@@ -71,29 +71,30 @@ Names below are suggestions. Purpose, permissions, and behavior are the binding 
 | Council Voice | Private VC for council members |
 
 ### The War Room
-*All Knights and above. Primary hub for live event coordination.*
+*All Knights and above. Primary hub for live event coordination. Channels ordered by urgency — most time-critical first.*
 
 | Channel (suggested name) | Notes |
 |---|---|
+| Bubble Reminder | Council+ posts alerts; all read. Manual or bot-driven reminders. First in category — highest urgency |
 | Battlegrounds | BG coordination, timing callouts, team assignments |
 | Seat of Power | SoP weekend coordination on PvP weekends |
-| Bubble Reminder | Council+ posts alerts; all read. Manual or bot-driven reminders |
-| Battle Reports | Members post screenshots of battle results |
 | March Callouts | Rally and reinforce requests |
+| Battle Reports | Members post screenshots of battle results. Last — informational, not time-critical |
 | War Room Voice | General coordination VC |
 | Battlegrounds Voice | Dedicated BG VC |
 
 ### The Citadel
-*Reference library. Knights have read-only access. Landed Knights and above can post and maintain content.*
+*Reference library. Q&A is interactive — all Knights can post questions. All other channels are maintained by Landed Knights and above; Knights have read-only access.*
 
-| Channel (suggested name) | Notes |
-|---|---|
-| Tips & Tricks | General game tips |
-| Q&A | All members can post questions; experienced members answer |
-| Hero Builds | Hero loadouts by use case (siege, cavalry, ranged, infantry); use pinned posts or headers to subdivide rather than separate channels |
-| Gear Sets | Gear recommendations by use case (combat, SoP, march, utility); same approach as hero builds |
-| Keep Development | Building guides, links to the Laughing Cr0w companion tools (prestige ledger, keep upgrade calculator, Gendry's Forge) |
-| Research Goals | Recommended research paths |
+Use Discord's **Forum channel** type for Q&A, Hero Builds, and Gear Sets. Each question or build becomes its own titled thread — searchable, organized, and doesn't get buried in scroll. Text channels are sufficient for Guides and Keep Development.
+
+| Channel (suggested name) | Type | Notes |
+|---|---|---|
+| Q&A | Forum | All members post questions; Landed Knights and above answer. Each question is its own thread |
+| Hero Builds | Forum | One thread per build, tagged by troop type (siege, cavalry, ranged, infantry). Landed Knight+ maintains |
+| Gear Sets | Forum | One thread per gear set, tagged by use case (combat, SoP, march, utility). Landed Knight+ maintains |
+| Guides | Text | Merged tips, tricks, and research goals. Pinned posts organized by topic. Landed Knight+ maintains |
+| Keep Development | Text | Building guides, links to Laughing Cr0w companion tools (prestige ledger, keep upgrade calculator, Gendry's Forge). Landed Knight+ maintains |
 
 ### Alliance Hall
 *General member space. All Knights and above.*
@@ -124,7 +125,7 @@ Names below are suggestions. Purpose, permissions, and behavior are the binding 
 | Welcome | Read + post in intro/verification | Read + post in intro/verification | Full | Full | Full |
 | The Small Council | No access | No access | No access | Full | Full |
 | The War Room | No access | Read + post | Read + post | Full | Full |
-| The Citadel | No access | Read-only | Read + post | Full | Full |
+| The Citadel | No access | Read-only except Q&A (can post questions) | Read + post all channels | Full | Full |
 | Alliance Hall | No access | Read + post | Read + post | Full | Full |
 | Off Duty | No access | Read + post | Read + post | Full | Full |
 
@@ -132,7 +133,7 @@ Names below are suggestions. Purpose, permissions, and behavior are the binding 
 
 ## Channel Count
 
-22 channels total across 6 categories. This is intentionally lean — if a topic outgrows a shared channel (e.g. hero builds becomes too noisy), split it then rather than pre-emptively.
+21 channels total across 6 categories (Tips & Tricks and Research Goals merged into Guides). This is intentionally lean — if a topic outgrows a shared channel, split it then rather than pre-emptively. Three Citadel channels (Q&A, Hero Builds, Gear Sets) are Forum type; the rest are standard text channels.
 
 ---
 
