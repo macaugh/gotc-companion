@@ -118,16 +118,82 @@ Use Discord's **Forum channel** type for Q&A, Hero Builds, and Gear Sets. Each q
 
 ---
 
-## Permission Summary
+## Per-Channel Permission Matrix
 
-| Category | Squire | Knight | Landed Knight | Small Council | Hand of the King |
+Legend: **R** = read-only · **R/W** = read + post · **R/W/M** = read + post + manage messages · **—** = hidden · **Admin** = full control via Administrator permission
+
+| Channel | Squire | Knight | Landed Knight | Small Council | Hand of the King |
 |---|---|---|---|---|---|
-| Welcome | Read + post in intro/verification | Read + post in intro/verification | Full | Full | Full |
-| The Small Council | No access | No access | No access | Full | Full |
-| The War Room | No access | Read + post | Read + post | Full | Full |
-| The Citadel | No access | Read-only except Q&A (can post questions) | Read + post all channels | Full | Full |
-| Alliance Hall | No access | Read + post | Read + post | Full | Full |
-| Off Duty | No access | Read + post | Read + post | Full | Full |
+| **Welcome** | | | | | |
+| Rules & Info | R | R | R | R/W | Admin |
+| Announcements | R | R | R | R/W | Admin |
+| Introductions | R/W | R/W | R/W | R/W | Admin |
+| Account Verification | R/W | R | R | R/W/M | Admin |
+| Color Roles (role picker) | Self-assign | Self-assign | Self-assign | Self-assign | Admin |
+| **The Small Council** | | | | | |
+| Council Chat | — | — | — | R/W | Admin |
+| Council Notes | — | — | — | R/W/M | Admin |
+| Council Voice | — | — | — | Join/Speak | Admin |
+| **The War Room** | | | | | |
+| Bubble Reminder | — | R | R | R/W | Admin |
+| Battlegrounds | — | R/W | R/W | R/W | Admin |
+| Seat of Power | — | R/W | R/W | R/W | Admin |
+| March Callouts | — | R/W | R/W | R/W | Admin |
+| Battle Reports | — | R/W | R/W | R/W | Admin |
+| War Room Voice | — | Join/Speak | Join/Speak | Join/Speak | Admin |
+| Battlegrounds Voice | — | Join/Speak | Join/Speak | Join/Speak | Admin |
+| **The Citadel** | | | | | |
+| Q&A (Forum) | — | R/W | R/W/M | R/W/M | Admin |
+| Hero Builds (Forum) | — | R | R/W/M | R/W/M | Admin |
+| Gear Sets (Forum) | — | R | R/W/M | R/W/M | Admin |
+| Guides | — | R | R/W/M | R/W/M | Admin |
+| Keep Development | — | R | R/W/M | R/W/M | Admin |
+| **Alliance Hall** | | | | | |
+| Alliance Chat | — | R/W | R/W | R/W | Admin |
+| Polls | — | R | R | R/W | Admin |
+| Gift Exchange | — | R/W | R/W | R/W | Admin |
+| Alt Registration | — | R/W | R/W | R/W | Admin |
+| General Voice (lobby) | — | Join/Speak | Join/Speak | Join/Speak | Admin |
+| **Off Duty** | | | | | |
+| The Tavern | — | R/W | R/W | R/W | Admin |
+| Achievements | — | R/W | R/W | R/W | Admin |
+| Other Games | — | R/W | R/W | R/W | Admin |
+
+---
+
+## Migration Path
+
+For members of an existing server being ported to this new server.
+
+**Principle:** Existing members are already known quantities — they skip account verification. Officers assign roles directly from the existing in-game roster.
+
+### Migration Steps
+
+1. **Prepare a roster** — before launching the new server, document every existing member's Discord username and their current in-game tier (T1/T2/T3/T4 and whether they're on council). A spreadsheet works; this becomes the source of truth for role assignment.
+
+2. **Soft launch the new server** — complete all Tasks 1–14 in the implementation plan (server fully configured, seeded with starter content). Do not announce publicly yet.
+
+3. **Announce in the old server** — post in the old server's announcements channel:
+   - Link to the new server invite
+   - State the migration deadline (recommended: 2 weeks)
+   - Explain that roles will be assigned directly — no need to go through account verification
+
+4. **Fast-track role assignment** — as existing members join the new server:
+   - They receive `@Squire` automatically (expected — ignore the onboarding flow)
+   - An officer opens Server Settings → Members, finds the user, and assigns their correct role directly (`@Knight`, `@Landed Knight`, `@Small Council`, or `@Hand of the King`)
+   - The `@Squire` role is replaced by the appropriate role — no screenshot verification required
+   - Council members receive both their tier role and `@Small Council`
+
+5. **Track completion** — check off members against the roster as they are assigned. Chase down stragglers in the old server before the deadline.
+
+6. **Close the old server** — after the migration deadline, either archive (set all channels to read-only) or delete the old server. Post a final redirect message first.
+
+### Fast-Track vs. New Member Flows
+
+| Member type | Onboarding path |
+|---|---|
+| Existing member (porting over) | Officer assigns role directly from roster — skip verification |
+| New recruit joining fresh | Full Squire → screenshot verification → Knight flow |
 
 ---
 

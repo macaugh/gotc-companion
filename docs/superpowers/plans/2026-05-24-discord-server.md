@@ -366,6 +366,82 @@ Gendry's Forge: https://[your-github-pages-url]/gendrys-forge.html
 
 ---
 
+---
+
+## Task 16: Prepare Migration Roster
+
+**What:** Before announcing the new server, document every existing member so officers can fast-track role assignment without relying on memory.
+
+- [ ] Create a spreadsheet (Google Sheets, Notion, etc.) with these columns:
+
+```
+Discord Username | In-game Name | Tier | Council? | Ported? | Role Assigned
+```
+
+- [ ] Fill in every current member from the existing server's member list and in-game roster
+- [ ] Mark the `Council?` column for any T3 who is on council (they get both `@Landed Knight` and `@Small Council`)
+- [ ] Share the spreadsheet with all officers so anyone can mark members as ported
+
+**Verify:** Every current member has a row. `Tier` column has no blanks.
+
+---
+
+## Task 17: Soft Launch and Announce Migration
+
+**What:** Open the new server to members and communicate the migration in the old server.
+
+- [ ] In the new server: generate an invite link (right-click server name → Invite People → set to no-expiry)
+- [ ] In the **old server's announcements channel**, post a migration message containing:
+  - That a new server is launching (name it)
+  - The invite link
+  - That roles will be assigned directly — no screenshot verification needed for existing members
+  - The migration deadline (set a specific date, recommended 2 weeks out)
+  - Who to ping if they have issues joining or getting their role
+
+**Verify:** Invite link works. Migration message is pinned in the old server's announcements.
+
+---
+
+## Task 18: Fast-Track Role Assignment for Existing Members
+
+**What:** As existing members join the new server, assign their roles directly from the roster — bypassing the Squire onboarding flow.
+
+For each member who joins:
+
+- [ ] Open **Server Settings → Members** in the new server
+- [ ] Find the member (they will have `@Squire` automatically)
+- [ ] Cross-reference their Discord username against the migration roster
+- [ ] Assign the correct role based on their tier:
+
+| In-game tier | Assign role(s) |
+|---|---|
+| T4 | `@Knight` |
+| T3 (not on council) | `@Landed Knight` |
+| T3 (on council) | `@Landed Knight` + `@Small Council` |
+| T2 | `@Small Council` (and optionally `@Landed Knight` if desired) |
+| T1 | `@Hand of the King` |
+
+- [ ] Mark the member as `Ported? = ✓` and fill in `Role Assigned` in the roster spreadsheet
+- [ ] Do **not** require them to post in `#account-verification` — they are already verified
+
+**Verify:** After assigning, confirm the member can see the correct categories (Knight sees War Room; Landed Knight can post in Citadel; Small Council sees The Small Council).
+
+---
+
+## Task 19: Chase Stragglers and Close Old Server
+
+**What:** After the migration deadline, ensure all members are ported and shut down the old server.
+
+- [ ] One week before deadline: post a reminder in the old server listing members who haven't joined yet (cross-reference roster `Ported?` column)
+- [ ] On the deadline: post a final message in the old server stating it is being archived
+- [ ] Set all old server channels to read-only (Edit Channel → Permissions → `@everyone`: Send Messages = ✗) — this preserves history without allowing new posts
+- [ ] Confirm roster shows 100% of members ported (or note anyone who left the alliance)
+- [ ] Optionally: transfer server ownership to a throwaway account and leave, or delete the old server
+
+**Verify:** Old server is read-only. New server roster matches the expected member count.
+
+---
+
 ## Completion Checklist
 
 - [ ] Server created with Community mode enabled
@@ -378,3 +454,7 @@ Gendry's Forge: https://[your-github-pages-url]/gendrys-forge.html
 - [ ] Permission chain verified end-to-end for all 5 role tiers
 - [ ] Citadel seeded with starter content
 - [ ] Rules channel has pinned welcome message
+- [ ] Migration roster prepared and shared with officers
+- [ ] Migration announced in old server with invite link and deadline
+- [ ] All existing members ported and roles assigned directly from roster
+- [ ] Old server archived or deleted after migration deadline
