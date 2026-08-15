@@ -109,35 +109,48 @@
   .children.open { display: block; }
   .search-dim .member-name:not(.highlight) { opacity: 0.3; }
 
-  /* Remove button */
-  .remove-btn {
-    font-size: 10px; padding: 2px 8px; border-radius: 2px;
+  /* Action buttons row */
+  .action-btns { display: flex; gap: 3px; margin-left: auto; padding-left: 8px; flex-shrink: 0; }
+  .action-btn {
+    font-size: 10px; padding: 1px 7px; border-radius: 2px; line-height: 1.7;
     border: 1px solid var(--border-strong); background: var(--bg-card);
     color: var(--text-muted); cursor: pointer;
     font-family: 'Cinzel', serif; letter-spacing: 0.04em;
     white-space: nowrap; transition: all 0.12s;
-    flex-shrink: 0;
   }
-  .remove-btn:hover { color: #d48080; border-color: #5a1a1a; background: #2a0d0d; }
+  .action-btn:hover { color: var(--gold); border-color: var(--gold-dark); }
+  .action-btn.promote { color: #a8d4b0; border-color: #1a5e3a; }
+  .action-btn.promote:hover { background: #0d2a12; }
+  .action-btn.demote { color: #a0a8d4; border-color: #2a2a5a; }
+  .action-btn.demote:hover { background: #0d0d2a; }
+  .action-btn.pick { color: var(--gold-pale); border-color: var(--gold-dark); }
+  .action-btn.pick:hover { background: #1a1200; }
+  .action-btn.remove { color: #d48080; border-color: #5a1a1a; }
+  .action-btn.remove:hover { background: #2a0d0d; }
+  .action-btn.cancel { color: #d48080; border-color: #5a1a1a; }
+  .action-btn.cancel:hover { background: #2a0d0d; }
+  .action-btn.place { background: #0d2a12; color: #a8d4b0; border-color: #1a5e3a; }
+  .action-btn.place:hover { background: #1a3a1a; }
 
-  .restore-btn {
-    font-size: 10px; padding: 2px 8px; border-radius: 2px;
-    border: 1px solid #1a5e3a; background: #0d2a12;
-    color: #a8d4b0; cursor: pointer;
-    font-family: 'Cinzel', serif; letter-spacing: 0.04em;
-    white-space: nowrap; transition: all 0.12s;
-    flex-shrink: 0;
+  /* Move/remove state styling */
+  .member-card.moving { outline: 2px solid var(--gold); background: #1a1500 !important; }
+  .member-card.can-target { border-color: #1a5e3a !important; }
+  .member-card.disabled { opacity: 0.28; pointer-events: none; }
+
+  .move-banner {
+    background: #1a1500; border: 1px solid var(--gold-dark); border-radius: 4px;
+    padding: 8px 14px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-size: 13px; color: var(--gold-pale);
   }
-  .restore-btn:hover { background: #1a3a1a; }
-
-  .member-card.removed-member {
-    opacity: 0.35;
-    text-decoration: line-through;
-    background: rgba(107, 24, 24, 0.08);
+  .move-banner strong { color: var(--gold); }
+  .move-banner button {
+    font-family: 'Cinzel', serif; font-size: 11px; padding: 3px 10px;
+    background: var(--bg-card); border: 1px solid #5a1a1a;
+    color: #d48080; cursor: pointer; border-radius: 2px; letter-spacing: 0.06em;
   }
-  .member-card.removed-member .member-name { text-decoration: line-through; }
 
-  /* Removed list */
+  /* Removed panel */
   .removed-panel {
     background: var(--bg-card); border: 1px solid var(--border-strong);
     border-radius: 4px; padding: 12px 16px; margin-bottom: 1.25rem;
@@ -146,9 +159,7 @@
     font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.15em;
     text-transform: uppercase; color: var(--blood); margin: 0 0 8px;
   }
-  .removed-list {
-    display: flex; gap: 6px; flex-wrap: wrap;
-  }
+  .removed-list { display: flex; gap: 6px; flex-wrap: wrap; }
   .removed-chip {
     display: inline-flex; align-items: center; gap: 6px;
     background: rgba(107, 24, 24, 0.15); border: 1px solid #5a1a1a;
