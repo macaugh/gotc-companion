@@ -121,6 +121,8 @@
   .action-btn:hover { color: var(--gold); border-color: var(--gold-dark); }
   .action-btn.promote { color: #a8d4b0; border-color: #1a5e3a; }
   .action-btn.promote:hover { background: #0d2a12; }
+  .action-btn.make-t1 { color: #f5d9d9; border-color: #8b1818; background: #3a0d0d; }
+  .action-btn.make-t1:hover { background: #6b1818; color: #fff; }
   .action-btn.demote { color: #a0a8d4; border-color: #2a2a5a; }
   .action-btn.demote:hover { background: #0d0d2a; }
   .action-btn.pick { color: var(--gold-pale); border-color: var(--gold-dark); }
@@ -330,6 +332,14 @@ function doPlaceUnder(targetId, e) {
   renderView();
 }
 
+function doMakeT1(id, e) {
+  e.stopPropagation();
+  const n = nodes[id];
+  if (!n) return;
+  n.parentId = null;
+  renderView();
+}
+
 function doRemove(id, e) {
   e.stopPropagation();
   const n = nodes[id];
@@ -380,8 +390,11 @@ function renderNode(n, d) {
     }
   } else if (d > 0) {
     const canPromote = d >= 2;
+    const isT2 = d === 1;
     const hasSib = kids(nodes[n.id].parentId).some(s => s.id !== n.id);
-    if (canPromote)
+    if (isT2)
+      btns += `<button class="action-btn make-t1" onclick="doMakeT1('${n.id}',event)" title="Promote to T1 (new root)">★ T1</button>`;
+    else if (canPromote)
       btns += `<button class="action-btn promote" onclick="doPromote('${n.id}',event)" title="Move up one tier">↑</button>`;
     if (hasSib)
       btns += `<button class="action-btn demote" onclick="doDemote('${n.id}',event)" title="Move down under a sibling">↓</button>`;
