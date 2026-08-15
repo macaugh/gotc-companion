@@ -286,7 +286,7 @@ function renderNode(m, depth) {
   const tNum = depth + 1;
   const kids = m.children || [];
   const hasKids = kids.length > 0;
-  const lvl = m.level != null ? 'K' + m.level : '';
+  const lvl = m.level != null ? 'H' + m.level : '';
   const tag = m.tag && !m.tag.startsWith('?') ? m.tag : '';
 
   const cardClass = ['member-card', hasKids ? 'has-children' : 'no-children'].join(' ');
