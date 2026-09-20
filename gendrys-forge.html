@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gendry's Forge — GoT Conquest Calculator</title>
-<meta name="description" content="Plan Lords-gear crafting in Game of Thrones: Conquest: cost, time, and bonus values at a chosen quality.">
+<meta name="description" content="Plan Lords-gear crafting in Game of Thrones: Conquest — pick season, set, level, and quality to see material costs.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -18,21 +18,18 @@
     <a href="index.html">Prestige Ledger</a>
     <a href="keep-upgrade.html">Night's Watch: The Builders</a>
     <a href="gendrys-forge.html" class="current">Gendry's Forge</a>
+    <a href="enhance.html">Stonemason's Lodge</a>
     <a href="alliance-tree.html">Banner Council</a>
+    <a href="klash-roster.html">KLASH Roster</a>
   </nav>
 
   <div class="crest">⚔ ✦ ⚔</div>
   <h1 class="title">Gendry's Forge</h1>
-  <p class="subtitle">Plan a Lords-gear loadout: materials, time, and bonuses</p>
+  <p class="subtitle">Plan a Lords-gear loadout: materials by season, set, and quality</p>
 
   <div class="panel" id="wrap">
 
-    <h2>Goal &amp; Target</h2>
-    <div class="row">
-      <label>House Level</label>
-      <input type="text" inputmode="numeric" id="house-level" class="val-input" value="34" />
-      <span class="hint">Max craftable tier: <strong id="max-tier">30</strong></span>
-    </div>
+    <h2>Mode</h2>
     <div class="row">
       <label>Mode</label>
       <div class="radio-group" id="mode-group">
@@ -43,39 +40,37 @@
 
     <div class="divider"></div>
 
-    <h2>Bonus Filter</h2>
-    <div class="row">
-      <label>Filter by bonus</label>
-      <input type="text" id="bonus-filter" class="val-input bonus-filter-input" placeholder="e.g. forging speed, infantry attack" />
-      <span class="hint">Comma-separated; shows pieces whose bonuses match any term.</span>
-    </div>
-
-    <div class="divider"></div>
-
     <div id="loadout-panel">
-      <h2 id="loadout-heading">Loadout</h2>
+      <h2>Loadout</h2>
       <div class="row">
-        <label>Target tier</label>
-        <select id="target-tier" class="val-select"></select>
+        <label>Season</label>
+        <select id="season-select" class="val-select"></select>
       </div>
       <div class="row">
-        <label>Target quality</label>
-        <select id="target-quality" class="val-select"></select>
+        <label>Set</label>
+        <select id="set-select" class="val-select"></select>
       </div>
-      <div id="slot-pickers"></div>
+      <div class="row">
+        <label>Level</label>
+        <select id="level-select" class="val-select"></select>
+      </div>
+      <div class="row">
+        <label>Quality</label>
+        <select id="quality-select" class="val-select"></select>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2>Pieces</h2>
+      <div id="piece-checklist"></div>
     </div>
 
     <div id="queue-panel" class="hidden">
-      <h2 id="queue-heading">Queue</h2>
+      <h2>Queue</h2>
       <div style="margin-bottom: 1rem;">
         <button type="button" id="queue-add" class="btn-gold">+ Add piece</button>
       </div>
-      <table id="queue-table" class="queue-table">
-        <thead><tr>
-          <th>Slot</th><th>Tier</th><th>Piece</th><th>Quality</th><th></th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
+      <div id="queue-items"></div>
     </div>
 
     <div class="divider"></div>
@@ -85,40 +80,25 @@
       <label>Steel Crafting Efficiency (%)</label>
       <input type="text" inputmode="decimal" id="steel-eff" class="val-input" value="0" />
     </div>
-    <div class="row">
-      <label>Forge Time Efficiency (%)</label>
-      <input type="text" inputmode="decimal" id="forge-eff" class="val-input" value="0" />
-    </div>
-
-    <div class="divider"></div>
-
-    <details class="collapse" id="inventory-details">
-      <summary>Material Inventory</summary>
-      <div id="inventory-grid"></div>
-    </details>
 
     <div class="divider"></div>
 
     <h2>Totals</h2>
     <div id="totals-mount"></div>
 
-    <div class="divider"></div>
-
-    <details class="collapse">
-      <summary>Sequence</summary>
-      <div id="sequence-mount"></div>
-    </details>
-
   </div>
 
   <footer>
+    <p>Data sourced from <a href="https://marksmangotc.github.io/crafting/" target="_blank" rel="noopener">marksmangotc.github.io/crafting</a></p>
     <p>Forged in fire &amp; vanilla JavaScript · <a href="https://github.com/macaugh/gotc-companion" target="_blank" rel="noopener">view source</a></p>
+    <p><a href="https://buymeacoffee.com/laughingcr0w" target="_blank" rel="noopener">☕ Buy me a coffee</a></p>
   </footer>
 
 </div>
 
-<script src="gear-data.generated.js"></script>
-<script src="gear-calc.js"></script>
+<script src="crafting-seasons.js"></script>
+<script src="crafting-materials.js"></script>
+<script src="crafting-products.js"></script>
 <script src="gendrys-forge.js"></script>
 </body>
 </html>

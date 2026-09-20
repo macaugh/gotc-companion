@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   .page { max-width: 1100px; }
 
@@ -101,7 +102,7 @@
   }
   .member-card:hover { border-color: var(--border-strong); background: var(--bg-card-raised); }
   .member-card.has-children::before {
-    content: '▶';
+    content: '\25B6';
     font-size: 9px; color: var(--text-muted);
     transition: transform 0.15s; display: inline-block;
     min-width: 14px;
@@ -126,18 +127,9 @@
   .member-name.highlight { color: var(--gold-bright); font-weight: 600; }
   .member-level { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
   .member-followers { font-size: 12px; color: var(--gold-faint); white-space: nowrap; }
-  .off-map { font-size: 11px; color: #8b6818; margin-left: 2px; }
 
   /* Hidden tier */
   .tier-hidden { display: none !important; }
-
-  /* Proposed badge */
-  .proposed-badge {
-    font-size: 10px; font-family: 'Cinzel', serif; letter-spacing: 0.05em;
-    padding: 2px 7px; border-radius: 2px;
-    background: #1a1a00; color: var(--gold-dim); border: 1px dashed var(--gold-dark);
-    white-space: nowrap;
-  }
 
   /* Collapsed children */
   .children { display: none; }
@@ -148,15 +140,7 @@
 
   .divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
 
-  .note-box {
-    background: var(--bg-card); border: 1px solid var(--border-strong);
-    border-radius: 4px; padding: 10px 14px;
-    font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem;
-    font-style: italic;
-  }
-  .note-box strong { color: var(--gold-dim); font-style: normal; }
-
-  /* Combined interactive editor */
+  /* Interactive editor */
   .comb-btns { display: flex; gap: 3px; margin-left: auto; padding-left: 8px; flex-shrink: 0; }
   .comb-btn {
     font-size: 10px; padding: 1px 7px; border-radius: 2px; line-height: 1.7;
@@ -176,6 +160,8 @@
   .comb-btn.cancel:hover { background: #2a0d0d; }
   .comb-btn.place { background: #0d2a12; color: #a8d4b0; border-color: #1a5e3a; }
   .comb-btn.place:hover { background: #1a3a1a; }
+  .comb-btn.remove { color: #d48080; border-color: #5a1a1a; }
+  .comb-btn.remove:hover { background: #2a0d0d; }
   .member-card.comb-moving { outline: 2px solid var(--gold); background: #1a1500 !important; }
   .member-card.comb-can-target { border-color: #1a5e3a !important; }
   .member-card.comb-disabled { opacity: 0.28; pointer-events: none; }
@@ -191,13 +177,98 @@
     background: var(--bg-card); border: 1px solid #5a1a1a;
     color: #d48080; cursor: pointer; border-radius: 2px; letter-spacing: 0.06em;
   }
-  .comb-reset {
-    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.08em;
-    padding: 5px 14px; border-radius: 3px; cursor: pointer;
-    border: 1px solid var(--border-strong); background: var(--bg-card);
-    color: var(--text-muted); transition: all 0.15s; margin-bottom: 12px;
+
+  /* Data input section */
+  .input-section {
+    margin-bottom: 1.5rem;
   }
-  .comb-reset:hover { color: var(--gold); border-color: var(--gold-dark); }
+  .add-member-form {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+    margin-bottom: 1rem;
+  }
+  .add-member-form .form-field {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .add-member-form .form-field label {
+    font-family: 'Cinzel', serif; font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+  .add-member-form input, .add-member-form select {
+    background: var(--bg-card); border: 1px solid var(--border-strong);
+    color: var(--gold-pale); padding: 8px 10px; border-radius: 3px;
+    font-family: 'Cormorant Garamond', serif; font-size: 14px;
+  }
+  .add-member-form input:focus, .add-member-form select:focus {
+    outline: none; border-color: var(--gold-dark);
+  }
+  .add-member-form select option {
+    background: var(--bg-card); color: var(--gold-pale);
+  }
+
+  .file-drop {
+    border: 2px dashed var(--border-strong); border-radius: 6px;
+    padding: 2rem; text-align: center; margin-bottom: 1rem;
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .file-drop:hover, .file-drop.drag-over {
+    border-color: var(--gold-dark);
+    background: rgba(168, 132, 47, 0.05);
+  }
+  .file-drop p {
+    color: var(--gold-dim); font-size: 14px; margin: 0 0 8px;
+  }
+  .file-drop .hint {
+    font-size: 12px; color: var(--text-muted);
+  }
+  .file-drop input[type="file"] { display: none; }
+
+  .dl-links {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px;
+  }
+  .dl-link {
+    font-family: 'Cinzel', serif; font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--gold-dim); border: 1px solid var(--border-strong);
+    padding: 5px 12px; border-radius: 3px; cursor: pointer;
+    background: var(--bg-card); transition: all 0.15s;
+    text-decoration: none;
+  }
+  .dl-link:hover { color: var(--gold); border-color: var(--gold-dark); }
+
+  /* Members table */
+  .members-table {
+    width: 100%; border-collapse: collapse; margin-top: 1rem;
+  }
+  .members-table th {
+    font-family: 'Cinzel', serif; font-size: 10px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold-dim); text-align: left;
+    padding: 6px 8px; border-bottom: 1px solid var(--border-strong);
+  }
+  .members-table td {
+    padding: 5px 8px; border-bottom: 1px solid var(--border);
+    color: var(--gold-pale); font-size: 14px;
+  }
+  .members-table tbody tr:hover td {
+    background: rgba(168, 132, 47, 0.05);
+  }
+  .members-table .remove-btn {
+    background: transparent; border: 1px solid #5a1a1a;
+    color: #d48080; border-radius: 3px; width: 24px; height: 24px;
+    cursor: pointer; font-size: 12px; line-height: 1;
+  }
+  .members-table .remove-btn:hover {
+    background: #2a0d0d; color: #ff8080;
+  }
+
+  .empty-state {
+    text-align: center; padding: 3rem 1rem;
+    color: var(--text-muted); font-style: italic; font-size: 15px;
+  }
+
+  .tab-count { font-size: 10px; opacity: 0.7; }
 </style>
 </head>
 <body>
@@ -207,6 +278,7 @@
     <a href="index.html">Prestige Ledger</a>
     <a href="keep-upgrade.html">Night's Watch: The Builders</a>
     <a href="gendrys-forge.html">Gendry's Forge</a>
+    <a href="enhance.html">Stonemason's Lodge</a>
     <a href="alliance-tree.html" class="current">Banner Council</a>
     <a href="klash-roster.html">KLASH Roster</a>
   </nav>
@@ -217,360 +289,466 @@
 
   <div class="panel">
 
-    <div class="ac-tabs" id="tabs">
-      <div class="ac-tab active" data-view="r3vrs">R3VRS · 52</div>
-      <div class="ac-tab" data-view="kboom">KB00M · 48</div>
-      <div class="ac-tab" data-view="combined">Combined (Proposed)</div>
-    </div>
+    <div class="ac-tabs" id="tabs"></div>
 
-    <div class="controls">
-      <input type="text" class="search-box" id="search" placeholder="Search bannermen…" />
-      <button class="ctrl-btn" id="expand-all">Expand all</button>
-      <button class="ctrl-btn" id="collapse-all">Collapse all</button>
-      <div class="tier-filter" id="tier-filter">
-        <div class="tier-btn" data-tier="1">T1</div>
-        <div class="tier-btn" data-tier="2">T2</div>
-        <div class="tier-btn" data-tier="3">T3</div>
-        <div class="tier-btn" data-tier="4">T4</div>
+    <div id="input-panel">
+      <h2>Add Alliance Members</h2>
+      <div class="input-section">
+        <div class="add-member-form" id="add-form">
+          <div class="form-field">
+            <label>Name</label>
+            <input type="text" id="member-name" placeholder="House name" style="width: 200px;" />
+          </div>
+          <div class="form-field">
+            <label>Level</label>
+            <input type="number" id="member-level" placeholder="1" min="1" max="99" style="width: 70px;" />
+          </div>
+          <div class="form-field">
+            <label>Alliance Tag</label>
+            <input type="text" id="member-tag" placeholder="e.g. R3VRS" style="width: 120px;" />
+          </div>
+          <div class="form-field">
+            <label>Liege (parent)</label>
+            <select id="member-liege" style="width: 200px;">
+              <option value="">(None — root)</option>
+            </select>
+          </div>
+          <button class="btn-gold" type="button" id="add-member-btn">+ Add</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>Import From File</h2>
+        <div class="file-drop" id="file-drop">
+          <p>Drop a CSV, JSON, or XLS/XLSX file here</p>
+          <span class="hint">or click to browse</span>
+          <input type="file" id="file-input" accept=".csv,.json,.xlsx,.xls" />
+        </div>
+
+        <div class="dl-links">
+          <button class="dl-link" id="dl-csv">Download CSV example</button>
+          <button class="dl-link" id="dl-json">Download JSON example</button>
+          <button class="dl-link" id="dl-xlsx">Download XLSX example</button>
+        </div>
       </div>
     </div>
 
-    <div class="stats-row" id="stats-row"></div>
+    <div id="tree-panel" style="display:none;">
+      <div class="controls">
+        <input type="text" class="search-box" id="search" placeholder="Search bannermen…" />
+        <button class="ctrl-btn" id="expand-all">Expand all</button>
+        <button class="ctrl-btn" id="collapse-all">Collapse all</button>
+        <div class="tier-filter" id="tier-filter">
+          <div class="tier-btn" data-tier="1">T1</div>
+          <div class="tier-btn" data-tier="2">T2</div>
+          <div class="tier-btn" data-tier="3">T3</div>
+          <div class="tier-btn" data-tier="4">T4</div>
+        </div>
+      </div>
 
-    <div id="view-container"></div>
+      <div class="stats-row" id="stats-row"></div>
+      <div id="view-container"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2>Current Members</h2>
+    <div id="members-list"></div>
 
   </div>
 
   <footer>
-    <p>Forged in fire &amp; vanilla JavaScript · Data from kingdom map sweep 2026-06-24</p>
+    <p>Forged in fire &amp; vanilla JavaScript · <a href="https://github.com/macaugh/gotc-companion" target="_blank" rel="noopener">view source</a></p>
+    <p><a href="https://buymeacoffee.com/laughingcr0w" target="_blank" rel="noopener">☕ Buy me a coffee</a></p>
   </footer>
 </div>
 
 <script>
-const RAW = {"r3vrs":[{"id":"0526e7b5-0b24-4bc9-a11a-f548c57128f2","name":"Goop-Hound","level":35,"height":2,"liege_id":"6411f853-8571-4c03-991e-f418858db750","followers":3,"on_map":true,"tag":"R3VRS"},{"id":"6411f853-8571-4c03-991e-f418858db750","name":"Reaper the deep","level":35,"height":4,"liege_id":null,"followers":53,"on_map":true,"tag":"R3VRS"},{"id":"7bb4629a-9c64-4853-b426-6d45ebff76e7","name":"LaughingCr0w","level":38,"height":3,"liege_id":"6411f853-8571-4c03-991e-f418858db750","followers":21,"on_map":true,"tag":"R3VRS"},{"id":"936fd345-5747-4210-8c48-68f91c602711","name":"Dark Robin","level":33,"height":3,"liege_id":"6411f853-8571-4c03-991e-f418858db750","followers":6,"on_map":true,"tag":"R3VRS"},{"id":"a9fe8fc8-7cae-424f-864e-e3633af92920","name":"Domina-Cindy","level":33,"height":2,"liege_id":"6411f853-8571-4c03-991e-f418858db750","followers":5,"on_map":true,"tag":"R3VRS"},{"id":"e22f2fcd-9935-4ac8-a61e-706e0cc7aad9","name":"Mimic Tear","level":34,"height":3,"liege_id":"6411f853-8571-4c03-991e-f418858db750","followers":13,"on_map":true,"tag":"R3VRS"},{"id":"6be4c375-3d3d-48b1-a3b4-0d1ad6922240","name":"JackieRobinson","level":33,"height":1,"liege_id":"0526e7b5-0b24-4bc9-a11a-f548c57128f2","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"adba1ff4-4126-40b2-9fe8-ea468f55d039","name":"Kurfitzel","level":31,"height":1,"liege_id":"0526e7b5-0b24-4bc9-a11a-f548c57128f2","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"cb987dd9-7dec-40eb-af25-a23248fcf7e0","name":"Baldord-Sward","level":15,"height":1,"liege_id":"0526e7b5-0b24-4bc9-a11a-f548c57128f2","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"47a9dc51-dfe0-4a5b-a463-6ad1ba20fff8","name":"B-LYDIA","level":32,"height":2,"liege_id":"7bb4629a-9c64-4853-b426-6d45ebff76e7","followers":5,"on_map":true,"tag":"R3VRS"},{"id":"a7daecee-416d-4484-9bbb-6f48a930246c","name":"Houseofgrass104","level":37,"height":2,"liege_id":"7bb4629a-9c64-4853-b426-6d45ebff76e7","followers":4,"on_map":true,"tag":"R3VRS"},{"id":"babf3472-5048-49a8-b9af-42848c803874","name":"KING YUGO","level":31,"height":2,"liege_id":"7bb4629a-9c64-4853-b426-6d45ebff76e7","followers":3,"on_map":true,"tag":"R3VRS"},{"id":"ced2ae43-a53c-4372-b8e7-adc4c8b33f77","name":"Destructïon","level":26,"height":2,"liege_id":"7bb4629a-9c64-4853-b426-6d45ebff76e7","followers":5,"on_map":true,"tag":"R3VRS"},{"id":"34bd51ec-de75-44b5-acc1-b3798c277412","name":"DrkSister","level":34,"height":2,"liege_id":"936fd345-5747-4210-8c48-68f91c602711","followers":1,"on_map":true,"tag":"R3VRS"},{"id":"a5a64fea-4bdf-4c5c-91c8-ebc400f778c1","name":"Eddy Alemán","level":42,"height":2,"liege_id":"936fd345-5747-4210-8c48-68f91c602711","followers":2,"on_map":true,"tag":"R3VRS"},{"id":"c599f965-6ec5-4a22-995d-200900b81721","name":"HouseImladris","level":34,"height":1,"liege_id":"936fd345-5747-4210-8c48-68f91c602711","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"577c9e84-adc1-4f38-8af2-b3ee73b44acd","name":"Lionblossom","level":30,"height":1,"liege_id":"a9fe8fc8-7cae-424f-864e-e3633af92920","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"75c74cec-185d-4f48-8118-f6359b990861","name":"Hoodieshawn","level":26,"height":1,"liege_id":"a9fe8fc8-7cae-424f-864e-e3633af92920","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"8e0f7a91-1384-4611-9cb6-15bd8d8fc72d","name":"LITTLE F FINGER","level":24,"height":1,"liege_id":"a9fe8fc8-7cae-424f-864e-e3633af92920","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"d523830f-bc06-4b02-ba02-9c596d773a93","name":"DeZnUuTz","level":35,"height":1,"liege_id":"a9fe8fc8-7cae-424f-864e-e3633af92920","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"dbe9ed29-6ffe-4e2d-ac0c-b1cdcdf43d6e","name":"DavidOutAtSea","level":30,"height":1,"liege_id":"a9fe8fc8-7cae-424f-864e-e3633af92920","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"49cd5e15-7a5d-44ad-9d6e-796e7485e99c","name":"Alec Brightwood","level":34,"height":2,"liege_id":"e22f2fcd-9935-4ac8-a61e-706e0cc7aad9","followers":3,"on_map":true,"tag":"R3VRS"},{"id":"c45ac702-1a92-450a-89c8-4da65b825133","name":"DEMONIA_CULT","level":41,"height":2,"liege_id":"e22f2fcd-9935-4ac8-a61e-706e0cc7aad9","followers":5,"on_map":true,"tag":"R3VRS"},{"id":"ccdb7c39-612c-4820-941a-9d3cba4ecd34","name":"Vidonho","level":30,"height":1,"liege_id":"e22f2fcd-9935-4ac8-a61e-706e0cc7aad9","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"e4e6ac8c-690f-47a7-821d-9388c21d9342","name":"MurilloMarques","level":28,"height":1,"liege_id":"e22f2fcd-9935-4ac8-a61e-706e0cc7aad9","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"e8b6a6cd-6ec8-4d85-abc0-15d2da37274c","name":"House sinja","level":29,"height":1,"liege_id":"e22f2fcd-9935-4ac8-a61e-706e0cc7aad9","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"53835162-cbda-4b36-a8b0-ac848585425c","name":"Jeferson97","level":25,"height":1,"liege_id":"47a9dc51-dfe0-4a5b-a463-6ad1ba20fff8","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"589e8e2a-b67f-4e62-980b-3033688d3f5c","name":"RedStarRossi","level":25,"height":1,"liege_id":"47a9dc51-dfe0-4a5b-a463-6ad1ba20fff8","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"66a0cf57-e21c-4abd-8fdf-0b10f6ef4027","name":"Dickon Manwoody","level":37,"height":1,"liege_id":"47a9dc51-dfe0-4a5b-a463-6ad1ba20fff8","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"bb119b8b-408c-4a77-8273-22c80efdbe37","name":"antonioprado","level":26,"height":1,"liege_id":"47a9dc51-dfe0-4a5b-a463-6ad1ba20fff8","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"e4d922de-77a9-470b-9a86-26d4b51cbb13","name":"Landswimmer","level":27,"height":1,"liege_id":"47a9dc51-dfe0-4a5b-a463-6ad1ba20fff8","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"4c6705c3-64b1-40ab-baae-a6bccad74f93","name":"Dunnah Vetta","level":32,"height":1,"liege_id":"a7daecee-416d-4484-9bbb-6f48a930246c","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"8c64942e-ad4e-41a8-a478-4082083fa14b","name":"StonePiper","level":28,"height":1,"liege_id":"a7daecee-416d-4484-9bbb-6f48a930246c","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"bc7e6d59-011b-490b-ad7b-f75b7f8e120c","name":"Laurbee5","level":27,"height":1,"liege_id":"a7daecee-416d-4484-9bbb-6f48a930246c","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"df6105ec-9ba8-453c-9a47-0342686a090b","name":"Lord Darkness69","level":26,"height":1,"liege_id":"a7daecee-416d-4484-9bbb-6f48a930246c","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"534be972-5b5d-4963-9713-a8a242a406f2","name":"king yugo jr 2","level":28,"height":1,"liege_id":"babf3472-5048-49a8-b9af-42848c803874","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"550a3cbe-4daf-4a27-ae9f-283d565cb0a6","name":"KING YUGO jr 3","level":18,"height":1,"liege_id":"babf3472-5048-49a8-b9af-42848c803874","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"cd12da72-10d5-46d5-a300-e49d655827f8","name":"KING YUGO jr 1","level":28,"height":1,"liege_id":"babf3472-5048-49a8-b9af-42848c803874","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"6d3864e4-ece8-47cf-b4ec-6bc15da5be6c","name":"Drẹąm","level":21,"height":1,"liege_id":"ced2ae43-a53c-4372-b8e7-adc4c8b33f77","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"7e7cc048-7a83-419e-bef4-9092a7db7916","name":"Dẹspąïr","level":20,"height":1,"liege_id":"ced2ae43-a53c-4372-b8e7-adc4c8b33f77","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"abcb8f02-efff-4e7c-97b7-dcd04de48001","name":"Matëriæ","level":17,"height":1,"liege_id":"ced2ae43-a53c-4372-b8e7-adc4c8b33f77","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"bfc70d5c-5d70-4bfa-a17d-3d72f2f39111","name":"DiscordantCr0w","level":19,"height":1,"liege_id":"ced2ae43-a53c-4372-b8e7-adc4c8b33f77","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"de445c14-b23f-412b-b481-8d518299b147","name":"Dẹstïny","level":19,"height":1,"liege_id":"ced2ae43-a53c-4372-b8e7-adc4c8b33f77","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"e1050117-77e5-48d2-9a2e-bce931b5425b","name":"LilSister","level":20,"height":1,"liege_id":"34bd51ec-de75-44b5-acc1-b3798c277412","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"33decba4-f3c1-42a3-a7c6-684d5c409d1e","name":"Sir Bap","level":29,"height":1,"liege_id":"a5a64fea-4bdf-4c5c-91c8-ebc400f778c1","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"816ed3a6-0393-4240-baf6-dd04542a1d85","name":"Šhamrock","level":22,"height":1,"liege_id":"a5a64fea-4bdf-4c5c-91c8-ebc400f778c1","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"2173832d-936d-4caa-b1e8-48f032d682f9","name":"MaxBrightflame","level":18,"height":1,"liege_id":"49cd5e15-7a5d-44ad-9d6e-796e7485e99c","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"5aca6b54-82f2-44fb-a6a1-803388a3e7f6","name":"UhhJohnny","level":29,"height":1,"liege_id":"49cd5e15-7a5d-44ad-9d6e-796e7485e99c","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"f8a20a6e-c772-4e26-aaa5-47267e04eaa4","name":"Cassius Bellona","level":27,"height":1,"liege_id":"49cd5e15-7a5d-44ad-9d6e-796e7485e99c","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"0be7897a-8b7e-4f93-bb34-f63cdda1a248","name":"skull splitter","level":30,"height":1,"liege_id":"c45ac702-1a92-450a-89c8-4da65b825133","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"2f879b88-758f-4a58-83db-6f23dc5b83eb","name":"Chaos Gremlin","level":32,"height":1,"liege_id":"c45ac702-1a92-450a-89c8-4da65b825133","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"5f8c4511-2f3e-43a8-adb0-73810cc97e6d","name":"Lord Hidrico","level":28,"height":1,"liege_id":"c45ac702-1a92-450a-89c8-4da65b825133","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"df02601a-6015-4ab0-a8e2-6063a87700a1","name":"Squarefire","level":23,"height":1,"liege_id":"c45ac702-1a92-450a-89c8-4da65b825133","followers":0,"on_map":true,"tag":"R3VRS"},{"id":"fdc6ec6d-a418-4510-bce2-f5c0f1473214","name":"Mace91","level":29,"height":1,"liege_id":"c45ac702-1a92-450a-89c8-4da65b825133","followers":0,"on_map":true,"tag":"R3VRS"}],"kboom":[{"id":"31718f2d-7a6c-40bb-9639-8da0eadbb8ff","name":"Dunk da Lunk","level":37,"height":3,"liege_id":"db2c4842-24a8-49be-b250-69e6cb5eb0d5","followers":10,"on_map":true,"tag":"KB00M"},{"id":"6f2f6964-09de-44dd-b69b-8ca20cf2ec8a","name":"Thefireeking","level":29,"height":3,"liege_id":"db2c4842-24a8-49be-b250-69e6cb5eb0d5","followers":3,"on_map":true,"tag":"KB00M"},{"id":"c066c4a0-2ebf-4f43-86d8-db66b19af5ab","name":"ATWTMVTV","level":34,"height":3,"liege_id":"db2c4842-24a8-49be-b250-69e6cb5eb0d5","followers":4,"on_map":true,"tag":"KB00M"},{"id":"d8b9b4d3-f5bc-4b1e-b8c4-9599ce70bc50","name":"Bordan","level":42,"height":3,"liege_id":"db2c4842-24a8-49be-b250-69e6cb5eb0d5","followers":13,"on_map":true,"tag":"KB00M"},{"id":"db2c4842-24a8-49be-b250-69e6cb5eb0d5","name":"DeAth-MaCe","level":32,"height":4,"liege_id":null,"followers":50,"on_map":true,"tag":"KB00M"},{"id":"e2dac04e-9c02-40c3-b279-539af68419ee","name":"C A D E T","level":35,"height":3,"liege_id":"db2c4842-24a8-49be-b250-69e6cb5eb0d5","followers":15,"on_map":true,"tag":"KB00M"},{"id":"182d9e97-d520-4d5d-9aeb-4adad7f17639","name":"Vaessia","level":26,"height":2,"liege_id":"31718f2d-7a6c-40bb-9639-8da0eadbb8ff","followers":2,"on_map":true,"tag":"KB00M"},{"id":"31c40bec-3dfd-4164-ac33-b67584d91449","name":"Vegromano","level":31,"height":1,"liege_id":"31718f2d-7a6c-40bb-9639-8da0eadbb8ff","followers":0,"on_map":true,"tag":"KB00M"},{"id":"3f848171-3464-4aee-a1a8-012f3ca9e3c5","name":"Sharkbate67","level":32,"height":2,"liege_id":"31718f2d-7a6c-40bb-9639-8da0eadbb8ff","followers":1,"on_map":true,"tag":"KB00M"},{"id":"906a2268-c4d6-41db-ba20-a005f8549cbd","name":"Latuya","level":27,"height":1,"liege_id":"31718f2d-7a6c-40bb-9639-8da0eadbb8ff","followers":0,"on_map":true,"tag":"KB00M"},{"id":"b21476cd-1a78-41a3-98e5-90042a2885e4","name":"House Zephyrhil","level":32,"height":2,"liege_id":"31718f2d-7a6c-40bb-9639-8da0eadbb8ff","followers":2,"on_map":true,"tag":"KB00M"},{"id":"4521fd53-2141-43cd-851f-b9f4cd327b16","name":"GoldLeaf","level":32,"height":2,"liege_id":"e2dac04e-9c02-40c3-b279-539af68419ee","followers":4,"on_map":true,"tag":"KB00M"},{"id":"5b313149-c336-4230-869c-aebe431394c2","name":"chacha26","level":27,"height":1,"liege_id":"e2dac04e-9c02-40c3-b279-539af68419ee","followers":0,"on_map":true,"tag":"KB00M"},{"id":"688aa52f-a0d8-4828-b144-e38d9dc4bbda","name":"Ỳ","level":33,"height":2,"liege_id":"e2dac04e-9c02-40c3-b279-539af68419ee","followers":2,"on_map":true,"tag":"KB00M"},{"id":"8e1c20e8-ea37-49a7-bbb5-a7b4b2c89b63","name":"Lady Patton","level":30,"height":2,"liege_id":"e2dac04e-9c02-40c3-b279-539af68419ee","followers":2,"on_map":true,"tag":"KB00M"},{"id":"d89d72c6-5760-464f-91a2-b3b47aa54f3c","name":"ChokeOnMyVenom","level":33,"height":2,"liege_id":"e2dac04e-9c02-40c3-b279-539af68419ee","followers":2,"on_map":true,"tag":"KB00M"},{"id":"72aa76fe-c1f8-4c18-baac-61983268b5e0","name":"Badboltz","level":30,"height":2,"liege_id":"6f2f6964-09de-44dd-b69b-8ca20cf2ec8a","followers":1,"on_map":true,"tag":"KB00M"},{"id":"92a9c155-f06f-4431-884e-c1e14fa50c18","name":"Menzies2026","level":27,"height":1,"liege_id":"6f2f6964-09de-44dd-b69b-8ca20cf2ec8a","followers":0,"on_map":true,"tag":"KB00M"},{"id":"79c7ed4a-797f-4243-a23f-f8051de63b96","name":"LORD BOROCH","level":27,"height":1,"liege_id":"c066c4a0-2ebf-4f43-86d8-db66b19af5ab","followers":0,"on_map":true,"tag":"KB00M"},{"id":"d488c002-e49e-4cbc-9fa6-844ee7c665a3","name":"Donjon de Fer","level":35,"height":2,"liege_id":"c066c4a0-2ebf-4f43-86d8-db66b19af5ab","followers":1,"on_map":true,"tag":"KB00M"},{"id":"fbf6b925-c91d-44ac-a77e-5d5411a968d9","name":"BeccaBoo7","level":32,"height":1,"liege_id":"c066c4a0-2ebf-4f43-86d8-db66b19af5ab","followers":0,"on_map":true,"tag":"KB00M"},{"id":"04c55d13-3f0b-4dbe-8a0e-71539ee39018","name":"Croix-Ardente","level":30,"height":1,"liege_id":"d8b9b4d3-f5bc-4b1e-b8c4-9599ce70bc50","followers":0,"on_map":true,"tag":"KB00M"},{"id":"44ef8658-90ec-481b-b592-10b978ddf36e","name":"Lůnæmörca","level":33,"height":2,"liege_id":"d8b9b4d3-f5bc-4b1e-b8c4-9599ce70bc50","followers":4,"on_map":true,"tag":"KB00M"},{"id":"516b45d1-9dce-4079-a915-c011fe162a41","name":"Tidies","level":30,"height":2,"liege_id":"d8b9b4d3-f5bc-4b1e-b8c4-9599ce70bc50","followers":1,"on_map":true,"tag":"KB00M"},{"id":"710e20ba-c5db-4f54-89d7-0b7d05b12050","name":"House Lozhano","level":36,"height":2,"liege_id":"d8b9b4d3-f5bc-4b1e-b8c4-9599ce70bc50","followers":1,"on_map":true,"tag":"KB00M"},{"id":"89948215-28ca-4683-86cf-23ec8ff1d409","name":"Thunderclaw17","level":30,"height":2,"liege_id":"d8b9b4d3-f5bc-4b1e-b8c4-9599ce70bc50","followers":2,"on_map":true,"tag":"KB00M"},{"id":"5711e154-17df-459d-9ad8-f8306b7e69ec","name":"Lord lowtower","level":28,"height":1,"liege_id":"182d9e97-d520-4d5d-9aeb-4adad7f17639","followers":0,"on_map":true,"tag":"KB00M"},{"id":"83ae9632-0f4e-4437-ac63-5116b92c247e","name":"_BrightFlame_","level":26,"height":1,"liege_id":"182d9e97-d520-4d5d-9aeb-4adad7f17639","followers":0,"on_map":true,"tag":"KB00M"},{"id":"e900d280-05ce-40f1-ae35-f64b3dcad2d8","name":"WalkwithMuir","level":29,"height":1,"liege_id":"3f848171-3464-4aee-a1a8-012f3ca9e3c5","followers":0,"on_map":true,"tag":"KB00M"},{"id":"adefcdda-3d42-4042-af36-c7262d084fef","name":"House Gainzvill","level":25,"height":1,"liege_id":"b21476cd-1a78-41a3-98e5-90042a2885e4","followers":0,"on_map":true,"tag":"KB00M"},{"id":"b7c47968-9719-46d2-a164-394f856e76a0","name":"House Jaxsonvll","level":26,"height":1,"liege_id":"b21476cd-1a78-41a3-98e5-90042a2885e4","followers":0,"on_map":true,"tag":"KB00M"},{"id":"793d06b6-41ab-48a5-9d9b-9d6b2b2841e2","name":"Ser Berman","level":26,"height":1,"liege_id":"4521fd53-2141-43cd-851f-b9f4cd327b16","followers":0,"on_map":true,"tag":"KB00M"},{"id":"9e01ee55-3c82-4bb4-9ed0-2b1c4cc25308","name":"Sir Syd Barret","level":30,"height":1,"liege_id":"4521fd53-2141-43cd-851f-b9f4cd327b16","followers":0,"on_map":true,"tag":"KB00M"},{"id":"bc25c4be-a3f6-401a-a5e6-b84e0464fd30","name":"HouseSoPlaidd","level":29,"height":1,"liege_id":"4521fd53-2141-43cd-851f-b9f4cd327b16","followers":0,"on_map":true,"tag":"KB00M"},{"id":"e7cad52e-2fb1-472a-a1cd-52043e09d3f7","name":"NyxDireflame","level":31,"height":1,"liege_id":"4521fd53-2141-43cd-851f-b9f4cd327b16","followers":0,"on_map":true,"tag":"KB00M"},{"id":"b817539c-a49e-4d28-a60c-76fe3fb520f8","name":"Dracaryselon","level":30,"height":1,"liege_id":"688aa52f-a0d8-4828-b144-e38d9dc4bbda","followers":0,"on_map":true,"tag":"KB00M"},{"id":"fd63f90f-206c-4806-bbc5-62b76923732f","name":"Lasey","level":29,"height":1,"liege_id":"688aa52f-a0d8-4828-b144-e38d9dc4bbda","followers":0,"on_map":true,"tag":"KB00M"},{"id":"7f97276b-cac6-47c3-af3f-e0a067f40ddb","name":"RedRooster76","level":28,"height":1,"liege_id":"8e1c20e8-ea37-49a7-bbb5-a7b4b2c89b63","followers":0,"on_map":true,"tag":"KB00M"},{"id":"eb474ea4-7b91-4f35-b181-be9fec57272b","name":"Rinney Rowdy","level":35,"height":1,"liege_id":"8e1c20e8-ea37-49a7-bbb5-a7b4b2c89b63","followers":0,"on_map":true,"tag":"KB00M"},{"id":"63a78b5d-4709-4b12-a99f-e192841ec3fe","name":"Baba-YaGa","level":31,"height":1,"liege_id":"d89d72c6-5760-464f-91a2-b3b47aa54f3c","followers":0,"on_map":true,"tag":"KB00M"},{"id":"ecff9988-92cb-4b93-a159-9206499665ff","name":"Papaléguas_peka","level":19,"height":1,"liege_id":"d89d72c6-5760-464f-91a2-b3b47aa54f3c","followers":0,"on_map":true,"tag":"KB00M"},{"id":"91d08635-7bc7-4dbf-9de0-b08e935e9495","name":"The angeles","level":31,"height":1,"liege_id":"72aa76fe-c1f8-4c18-baac-61983268b5e0","followers":0,"on_map":true,"tag":"KB00M"},{"id":"c42de3d7-6e37-4484-b68f-35eb46f7212a","name":"Muelle","level":29,"height":1,"liege_id":"d488c002-e49e-4cbc-9fa6-844ee7c665a3","followers":0,"on_map":true,"tag":"KB00M"},{"id":"68a56c5c-573b-4cc5-b956-72feb498c48e","name":"Bubba4lyfe","level":33,"height":1,"liege_id":"44ef8658-90ec-481b-b592-10b978ddf36e","followers":0,"on_map":true,"tag":"KB00M"},{"id":"94567917-fc11-4cf3-8187-f9b502ecb06a","name":"Skêlêtor","level":28,"height":1,"liege_id":"44ef8658-90ec-481b-b592-10b978ddf36e","followers":0,"on_map":true,"tag":"KB00M"},{"id":"97348c1c-ebc5-403b-a0c2-3b2d64a533a9","name":"AlVall11","level":29,"height":1,"liege_id":"44ef8658-90ec-481b-b592-10b978ddf36e","followers":0,"on_map":true,"tag":"KB00M"},{"id":"c97d259d-d241-469d-944a-56314502b82e","name":"BurdenedThunder","level":28,"height":1,"liege_id":"44ef8658-90ec-481b-b592-10b978ddf36e","followers":0,"on_map":true,"tag":"KB00M"},{"id":"fe2fb2b7-8acc-474d-b13d-3edd0a9f9c01","name":"ScubaSteve92","level":25,"height":1,"liege_id":"516b45d1-9dce-4079-a915-c011fe162a41","followers":0,"on_map":true,"tag":"KB00M"},{"id":"deafe7f8-a419-42a1-82fb-32e6f8f4d0f3","name":"TheWiseKnight","level":28,"height":1,"liege_id":"710e20ba-c5db-4f54-89d7-0b7d05b12050","followers":0,"on_map":true,"tag":"KB00M"},{"id":"0f011d66-a1d0-42e2-94ff-76cdffb39ac8","name":"RiftShadow","level":26,"height":1,"liege_id":"89948215-28ca-4683-86cf-23ec8ff1d409","followers":0,"on_map":true,"tag":"KB00M"},{"id":"234acde9-7a15-43d4-9176-6c592268ec77","name":"HAMISERION","level":27,"height":1,"liege_id":"89948215-28ca-4683-86cf-23ec8ff1d409","followers":0,"on_map":true,"tag":"KB00M"}],"combined":{"id":"ced2ae43-a53c-4372-b8e7-adc4c8b33f77","name":"Destructïon","level":26,"proposedTier":1,"t2s":[{"id":"7bb4629a-9c64-4853-b426-6d45ebff76e7","name":"LaughingCr0w","level":38,"wing":"R3VRS","proposedTier":2,"t3s":[{"id":"e22f2fcd-9935-4ac8-a61e-706e0cc7aad9","name":"Mimic Tear","level":34},{"id":"936fd345-5747-4210-8c48-68f91c602711","name":"Dark Robin","level":33},{"id":"47a9dc51-dfe0-4a5b-a463-6ad1ba20fff8","name":"B-LYDIA","level":32},{"id":"a7daecee-416d-4484-9bbb-6f48a930246c","name":"Houseofgrass104","level":37},{"id":"babf3472-5048-49a8-b9af-42848c803874","name":"KING YUGO","level":31}],"t4s":[{"id":"49cd5e15-7a5d-44ad-9d6e-796e7485e99c","name":"Alec Brightwood","level":34},{"id":"c45ac702-1a92-450a-89c8-4da65b825133","name":"DEMONIA_CULT","level":41},{"id":"e8b6a6cd-6ec8-4d85-abc0-15d2da37274c","name":"House sinja","level":29},{"id":"e4e6ac8c-690f-47a7-821d-9388c21d9342","name":"MurilloMarques","level":28},{"id":"ccdb7c39-612c-4820-941a-9d3cba4ecd34","name":"Vidonho","level":30},{"id":"34bd51ec-de75-44b5-acc1-b3798c277412","name":"DrkSister","level":34},{"id":"a5a64fea-4bdf-4c5c-91c8-ebc400f778c1","name":"Eddy Alemán","level":42},{"id":"c599f965-6ec5-4a22-995d-200900b81721","name":"HouseImladris","level":34},{"id":"e1050117-77e5-48d2-9a2e-bce931b5425b","name":"LilSister","level":20,"parentId":"936fd345-5747-4210-8c48-68f91c602711"},{"id":"33decba4-f3c1-42a3-a7c6-684d5c409d1e","name":"Sir Bap","level":29,"parentId":"936fd345-5747-4210-8c48-68f91c602711"},{"id":"66a0cf57-e21c-4abd-8fdf-0b10f6ef4027","name":"Dickon Manwoody","level":37},{"id":"53835162-cbda-4b36-a8b0-ac848585425c","name":"Jeferson97","level":25},{"id":"e4d922de-77a9-470b-9a86-26d4b51cbb13","name":"Landswimmer","level":27},{"id":"589e8e2a-b67f-4e62-980b-3033688d3f5c","name":"RedStarRossi","level":25},{"id":"bb119b8b-408c-4a77-8273-22c80efdbe37","name":"antonioprado","level":26},{"id":"4c6705c3-64b1-40ab-baae-a6bccad74f93","name":"Dunnah Vetta","level":32},{"id":"bc7e6d59-011b-490b-ad7b-f75b7f8e120c","name":"Laurbee5","level":27},{"id":"df6105ec-9ba8-453c-9a47-0342686a090b","name":"Lord Darkness69","level":26},{"id":"8c64942e-ad4e-41a8-a478-4082083fa14b","name":"StonePiper","level":28},{"id":"cd12da72-10d5-46d5-a300-e49d655827f8","name":"KING YUGO jr 1","level":28},{"id":"534be972-5b5d-4963-9713-a8a242a406f2","name":"king yugo jr 2","level":28},{"id":"550a3cbe-4daf-4a27-ae9f-283d565cb0a6","name":"KING YUGO jr 3","level":18}]},{"id":"6411f853-8571-4c03-991e-f418858db750","name":"Reaper the deep","level":35,"wing":"R3VRS","proposedTier":2,"t3s":[{"id":"a9fe8fc8-7cae-424f-864e-e3633af92920","name":"Domina-Cindy","level":33},{"id":"bfc70d5c-5d70-4bfa-a17d-3d72f2f39111","name":"DiscordantCr0w","level":19},{"id":"816ed3a6-0393-4240-baf6-dd04542a1d85","name":"Šhamrock","level":22}],"t4s":[{"id":"dbe9ed29-6ffe-4e2d-ac0c-b1cdcdf43d6e","name":"DavidOutAtSea","level":30},{"id":"d523830f-bc06-4b02-ba02-9c596d773a93","name":"DeZnUuTz","level":35},{"id":"75c74cec-185d-4f48-8118-f6359b990861","name":"Hoodieshawn","level":26},{"id":"8e0f7a91-1384-4611-9cb6-15bd8d8fc72d","name":"LITTLE F FINGER","level":24},{"id":"577c9e84-adc1-4f38-8af2-b3ee73b44acd","name":"Lionblossom","level":30},{"id":"f8a20a6e-c772-4e26-aaa5-47267e04eaa4","name":"Cassius Bellona","level":27,"parentId":"bfc70d5c-5d70-4bfa-a17d-3d72f2f39111"},{"id":"2173832d-936d-4caa-b1e8-48f032d682f9","name":"MaxBrightflame","level":18,"parentId":"bfc70d5c-5d70-4bfa-a17d-3d72f2f39111"},{"id":"5aca6b54-82f2-44fb-a6a1-803388a3e7f6","name":"UhhJohnny","level":29,"parentId":"bfc70d5c-5d70-4bfa-a17d-3d72f2f39111"},{"id":"6d3864e4-ece8-47cf-b4ec-6bc15da5be6c","name":"Drẹąm","level":21,"parentId":"bfc70d5c-5d70-4bfa-a17d-3d72f2f39111"},{"id":"7e7cc048-7a83-419e-bef4-9092a7db7916","name":"Dẹspąïr","level":20,"parentId":"bfc70d5c-5d70-4bfa-a17d-3d72f2f39111"},{"id":"2f879b88-758f-4a58-83db-6f23dc5b83eb","name":"Chaos Gremlin","level":32,"parentId":"816ed3a6-0393-4240-baf6-dd04542a1d85"},{"id":"5f8c4511-2f3e-43a8-adb0-73810cc97e6d","name":"Lord Hidrico","level":28,"parentId":"816ed3a6-0393-4240-baf6-dd04542a1d85"},{"id":"fdc6ec6d-a418-4510-bce2-f5c0f1473214","name":"Mace91","level":29,"parentId":"816ed3a6-0393-4240-baf6-dd04542a1d85"},{"id":"df02601a-6015-4ab0-a8e2-6063a87700a1","name":"Squarefire","level":23,"parentId":"816ed3a6-0393-4240-baf6-dd04542a1d85"},{"id":"0be7897a-8b7e-4f93-bb34-f63cdda1a248","name":"skull splitter","level":30,"parentId":"816ed3a6-0393-4240-baf6-dd04542a1d85"},{"id":"de445c14-b23f-412b-b481-8d518299b147","name":"Dẹstïny","level":19},{"id":"abcb8f02-efff-4e7c-97b7-dcd04de48001","name":"Matëriæ","level":17}]},{"id":"0526e7b5-0b24-4bc9-a11a-f548c57128f2","name":"Goop-Hound","level":35,"wing":"R3VRS","proposedTier":2,"t3s":[],"t4s":[{"id":"cb987dd9-7dec-40eb-af25-a23248fcf7e0","name":"Baldord-Sward","level":15},{"id":"6be4c375-3d3d-48b1-a3b4-0d1ad6922240","name":"JackieRobinson","level":33},{"id":"adba1ff4-4126-40b2-9fe8-ea468f55d039","name":"Kurfitzel","level":31}]},{"id":"db2c4842-24a8-49be-b250-69e6cb5eb0d5","name":"DeAth-MaCe","level":32,"wing":"KB00M","proposedTier":2,"t3s":[{"id":"c066c4a0-2ebf-4f43-86d8-db66b19af5ab","name":"ATWTMVTV","level":34},{"id":"d8b9b4d3-f5bc-4b1e-b8c4-9599ce70bc50","name":"Bordan","level":42},{"id":"31718f2d-7a6c-40bb-9639-8da0eadbb8ff","name":"Dunk da Lunk","level":37},{"id":"6f2f6964-09de-44dd-b69b-8ca20cf2ec8a","name":"Thefireeking","level":29},{"id":"44ef8658-90ec-481b-b592-10b978ddf36e","name":"Lůnæmörca","level":33}],"t4s":[{"id":"d488c002-e49e-4cbc-9fa6-844ee7c665a3","name":"Donjon de Fer","level":35},{"id":"fbf6b925-c91d-44ac-a77e-5d5411a968d9","name":"BeccaBoo7","level":32},{"id":"79c7ed4a-797f-4243-a23f-f8051de63b96","name":"LORD BOROCH","level":27},{"id":"c42de3d7-6e37-4484-b68f-35eb46f7212a","name":"Muelle","level":29,"parentId":"c066c4a0-2ebf-4f43-86d8-db66b19af5ab"},{"id":"710e20ba-c5db-4f54-89d7-0b7d05b12050","name":"House Lozhano","level":36},{"id":"89948215-28ca-4683-86cf-23ec8ff1d409","name":"Thunderclaw17","level":30},{"id":"516b45d1-9dce-4079-a915-c011fe162a41","name":"Tidies","level":30},{"id":"04c55d13-3f0b-4dbe-8a0e-71539ee39018","name":"Croix-Ardente","level":30},{"id":"b21476cd-1a78-41a3-98e5-90042a2885e4","name":"House Zephyrhil","level":32},{"id":"3f848171-3464-4aee-a1a8-012f3ca9e3c5","name":"Sharkbate67","level":32},{"id":"182d9e97-d520-4d5d-9aeb-4adad7f17639","name":"Vaessia","level":26},{"id":"906a2268-c4d6-41db-ba20-a005f8549cbd","name":"Latuya","level":27},{"id":"31c40bec-3dfd-4164-ac33-b67584d91449","name":"Vegromano","level":31},{"id":"72aa76fe-c1f8-4c18-baac-61983268b5e0","name":"Badboltz","level":30},{"id":"92a9c155-f06f-4431-884e-c1e14fa50c18","name":"Menzies2026","level":27},{"id":"91d08635-7bc7-4dbf-9de0-b08e935e9495","name":"The angeles","level":31,"parentId":"6f2f6964-09de-44dd-b69b-8ca20cf2ec8a"},{"id":"97348c1c-ebc5-403b-a0c2-3b2d64a533a9","name":"AlVall11","level":29},{"id":"68a56c5c-573b-4cc5-b956-72feb498c48e","name":"Bubba4lyfe","level":33},{"id":"c97d259d-d241-469d-944a-56314502b82e","name":"BurdenedThunder","level":28},{"id":"94567917-fc11-4cf3-8187-f9b502ecb06a","name":"Skêlêtor","level":28},{"id":"234acde9-7a15-43d4-9176-6c592268ec77","name":"HAMISERION","level":27,"parentId":"44ef8658-90ec-481b-b592-10b978ddf36e"}]},{"id":"e2dac04e-9c02-40c3-b279-539af68419ee","name":"C A D E T","level":35,"wing":"KB00M","proposedTier":2,"t3s":[{"id":"688aa52f-a0d8-4828-b144-e38d9dc4bbda","name":"Ỳ","level":33},{"id":"d89d72c6-5760-464f-91a2-b3b47aa54f3c","name":"ChokeOnMyVenom","level":33},{"id":"4521fd53-2141-43cd-851f-b9f4cd327b16","name":"GoldLeaf","level":32},{"id":"8e1c20e8-ea37-49a7-bbb5-a7b4b2c89b63","name":"Lady Patton","level":30}],"t4s":[{"id":"b817539c-a49e-4d28-a60c-76fe3fb520f8","name":"Dracaryselon","level":30},{"id":"fd63f90f-206c-4806-bbc5-62b76923732f","name":"Lasey","level":29},{"id":"deafe7f8-a419-42a1-82fb-32e6f8f4d0f3","name":"TheWiseKnight","level":28,"parentId":"688aa52f-a0d8-4828-b144-e38d9dc4bbda"},{"id":"0f011d66-a1d0-42e2-94ff-76cdffb39ac8","name":"RiftShadow","level":26,"parentId":"688aa52f-a0d8-4828-b144-e38d9dc4bbda"},{"id":"fe2fb2b7-8acc-474d-b13d-3edd0a9f9c01","name":"ScubaSteve92","level":25,"parentId":"688aa52f-a0d8-4828-b144-e38d9dc4bbda"},{"id":"63a78b5d-4709-4b12-a99f-e192841ec3fe","name":"Baba-YaGa","level":31},{"id":"ecff9988-92cb-4b93-a159-9206499665ff","name":"Papaléguas_peka","level":19},{"id":"adefcdda-3d42-4042-af36-c7262d084fef","name":"House Gainzvill","level":25,"parentId":"d89d72c6-5760-464f-91a2-b3b47aa54f3c"},{"id":"b7c47968-9719-46d2-a164-394f856e76a0","name":"House Jaxsonvll","level":26,"parentId":"d89d72c6-5760-464f-91a2-b3b47aa54f3c"},{"id":"e900d280-05ce-40f1-ae35-f64b3dcad2d8","name":"WalkwithMuir","level":29,"parentId":"d89d72c6-5760-464f-91a2-b3b47aa54f3c"},{"id":"bc25c4be-a3f6-401a-a5e6-b84e0464fd30","name":"HouseSoPlaidd","level":29},{"id":"e7cad52e-2fb1-472a-a1cd-52043e09d3f7","name":"NyxDireflame","level":31},{"id":"793d06b6-41ab-48a5-9d9b-9d6b2b2841e2","name":"Ser Berman","level":26},{"id":"9e01ee55-3c82-4bb4-9ed0-2b1c4cc25308","name":"Sir Syd Barret","level":30},{"id":"5711e154-17df-459d-9ad8-f8306b7e69ec","name":"Lord lowtower","level":28,"parentId":"4521fd53-2141-43cd-851f-b9f4cd327b16"},{"id":"7f97276b-cac6-47c3-af3f-e0a067f40ddb","name":"RedRooster76","level":28},{"id":"eb474ea4-7b91-4f35-b181-be9fec57272b","name":"Rinney Rowdy","level":35},{"id":"83ae9632-0f4e-4437-ac63-5116b92c247e","name":"_BrightFlame_","level":26,"parentId":"8e1c20e8-ea37-49a7-bbb5-a7b4b2c89b63"},{"id":"5b313149-c336-4230-869c-aebe431394c2","name":"chacha26","level":27}]}]}};
+// ─── Data store ─────────────────────────────────────────────────────────────
+const alliances = {};  // tag → [{id, name, level, liege_id, tag}]
+let currentView = null;
+let hiddenTiers = new Set();
+let searchQuery = '';
+let moveSource = null;
 
-// Height → tier label (h=4 is root/T1)
-function tierLabel(h) { return ['','T4','T3','T2','T1'][h] || 'T?'; }
-function tierClass(h) { return 'tb-' + (5-h); }  // h4→tb-1, h3→tb-2, h2→tb-3, h1→tb-4
-function tierNum(h) { return 5 - h; }              // h4→1, h3→2, h2→3, h1→4
+function uid() {
+  return crypto.randomUUID ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      });
+}
 
-// Build parent→children map from flat roster
+function allMembers() {
+  return Object.values(alliances).flat();
+}
+
+// ─── Example data ───────────────────────────────────────────────────────────
+const EXAMPLE = [
+  { name: 'Lord Stark',      level: 35, tag: 'NORTH', liege: '' },
+  { name: 'Robb Stark',      level: 30, tag: 'NORTH', liege: 'Lord Stark' },
+  { name: 'Jon Snow',        level: 32, tag: 'NORTH', liege: 'Lord Stark' },
+  { name: 'Arya Stark',      level: 22, tag: 'NORTH', liege: 'Robb Stark' },
+  { name: 'Sansa Stark',     level: 24, tag: 'NORTH', liege: 'Robb Stark' },
+  { name: 'Tormund Giantsbane', level: 28, tag: 'NORTH', liege: 'Jon Snow' },
+];
+
+// ─── Downloads ──────────────────────────────────────────────────────────────
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('dl-csv').addEventListener('click', () => {
+  const header = 'name,level,tag,liege';
+  const rows = EXAMPLE.map(r => `${r.name},${r.level},${r.tag},${r.liege}`);
+  const csv = [header, ...rows].join('\n');
+  downloadBlob(new Blob([csv], { type: 'text/csv' }), 'alliance-example.csv');
+});
+
+document.getElementById('dl-json').addEventListener('click', () => {
+  const json = JSON.stringify(EXAMPLE, null, 2);
+  downloadBlob(new Blob([json], { type: 'application/json' }), 'alliance-example.json');
+});
+
+document.getElementById('dl-xlsx').addEventListener('click', () => {
+  const ws = XLSX.utils.json_to_sheet(EXAMPLE);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Members');
+  const data = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  downloadBlob(new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'alliance-example.xlsx');
+});
+
+// ─── File import ────────────────────────────────────────────────────────────
+const fileDrop = document.getElementById('file-drop');
+const fileInput = document.getElementById('file-input');
+
+fileDrop.addEventListener('click', () => fileInput.click());
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag-over'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag-over'));
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  fileDrop.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) handleFile(fileInput.files[0]);
+  fileInput.value = '';
+});
+
+function handleFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'json') {
+    file.text().then(text => {
+      const data = JSON.parse(text);
+      importRows(Array.isArray(data) ? data : [data]);
+    });
+  } else if (ext === 'csv') {
+    file.text().then(text => importRows(parseCSV(text)));
+  } else if (ext === 'xlsx' || ext === 'xls') {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws);
+      importRows(rows);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim());
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+    return obj;
+  });
+}
+
+function importRows(rows) {
+  const nameToId = {};
+  const deferred = [];
+
+  rows.forEach(row => {
+    const name = (row.name || '').trim();
+    if (!name) return;
+    const level = parseInt(row.level, 10) || 1;
+    const tag = (row.tag || row.alliance || 'DEFAULT').trim().toUpperCase();
+    const liege = (row.liege || row.parent || row.liege_name || '').trim();
+
+    const id = uid();
+    nameToId[name] = id;
+
+    if (!alliances[tag]) alliances[tag] = [];
+    alliances[tag].push({ id, name, level, liege_id: null, tag });
+    deferred.push({ id, liege });
+  });
+
+  deferred.forEach(({ id, liege }) => {
+    if (liege && nameToId[liege]) {
+      const member = allMembers().find(m => m.id === id);
+      if (member) member.liege_id = nameToId[liege];
+    }
+  });
+
+  refreshAll();
+}
+
+// ─── Add single member ─────────────────────────────────────────────────────
+document.getElementById('add-member-btn').addEventListener('click', addMember);
+document.getElementById('member-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addMember();
+});
+
+function addMember() {
+  const nameInput = document.getElementById('member-name');
+  const levelInput = document.getElementById('member-level');
+  const tagInput = document.getElementById('member-tag');
+  const liegeInput = document.getElementById('member-liege');
+
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+
+  const level = parseInt(levelInput.value, 10) || 1;
+  const tag = (tagInput.value.trim() || 'DEFAULT').toUpperCase();
+  const liegeId = liegeInput.value || null;
+
+  const id = uid();
+  if (!alliances[tag]) alliances[tag] = [];
+  alliances[tag].push({ id, name, level, liege_id: liegeId, tag });
+
+  nameInput.value = '';
+  levelInput.value = '';
+  nameInput.focus();
+
+  refreshAll();
+}
+
+// ─── Remove member ──────────────────────────────────────────────────────────
+function removeMember(id) {
+  for (const tag of Object.keys(alliances)) {
+    const idx = alliances[tag].findIndex(m => m.id === id);
+    if (idx === -1) continue;
+    alliances[tag].splice(idx, 1);
+    if (alliances[tag].length === 0) delete alliances[tag];
+    // Orphan any children
+    allMembers().forEach(m => { if (m.liege_id === id) m.liege_id = null; });
+    break;
+  }
+  refreshAll();
+}
+
+// ─── Refresh UI ─────────────────────────────────────────────────────────────
+function refreshAll() {
+  renderTabs();
+  updateLiegeSelect();
+  renderMembersTable();
+  const tags = Object.keys(alliances);
+  if (tags.length > 0) {
+    if (!currentView || !alliances[currentView]) currentView = tags[0];
+    document.getElementById('tree-panel').style.display = '';
+    renderView();
+  } else {
+    currentView = null;
+    document.getElementById('tree-panel').style.display = 'none';
+  }
+  saveToStorage();
+}
+
+function renderTabs() {
+  const tabsEl = document.getElementById('tabs');
+  const tags = Object.keys(alliances);
+  if (tags.length === 0) {
+    tabsEl.innerHTML = '';
+    return;
+  }
+  tabsEl.innerHTML = tags.map(tag => {
+    const count = alliances[tag].length;
+    const active = tag === currentView ? ' active' : '';
+    return `<div class="ac-tab${active}" data-view="${tag}">${tag} <span class="tab-count">&middot; ${count}</span></div>`;
+  }).join('');
+
+  tabsEl.querySelectorAll('.ac-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      currentView = tab.dataset.view;
+      hiddenTiers.clear();
+      document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('dimmed'));
+      searchQuery = '';
+      document.getElementById('search').value = '';
+      renderTabs();
+      renderView();
+    });
+  });
+}
+
+function updateLiegeSelect() {
+  const sel = document.getElementById('member-liege');
+  const curVal = sel.value;
+  const members = allMembers().sort((a, b) => a.name.localeCompare(b.name));
+  sel.innerHTML = '<option value="">(None — root)</option>' +
+    members.map(m => `<option value="${m.id}">${m.name} (${m.tag})</option>`).join('');
+  if (curVal && members.find(m => m.id === curVal)) sel.value = curVal;
+}
+
+function renderMembersTable() {
+  const el = document.getElementById('members-list');
+  const members = allMembers();
+  if (members.length === 0) {
+    el.innerHTML = '<div class="empty-state">No members yet. Add members above or import a file.</div>';
+    return;
+  }
+  const byId = {};
+  members.forEach(m => { byId[m.id] = m; });
+  el.innerHTML = `<table class="members-table">
+    <thead><tr><th>Name</th><th>Level</th><th>Tag</th><th>Liege</th><th></th></tr></thead>
+    <tbody>${members.map(m => `<tr>
+      <td>${esc(m.name)}</td>
+      <td>${m.level}</td>
+      <td>${esc(m.tag)}</td>
+      <td>${m.liege_id && byId[m.liege_id] ? esc(byId[m.liege_id].name) : '—'}</td>
+      <td><button class="remove-btn" onclick="removeMember('${m.id}')" title="Remove">&times;</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ─── Tree rendering ─────────────────────────────────────────────────────────
 function buildTree(roster) {
   const byId = {};
-  roster.forEach(m => { byId[m.id] = m; m.children = []; });
-  roster.forEach(m => {
+  roster.forEach(m => { byId[m.id] = { ...m, children: [] }; });
+  const nodes = Object.values(byId);
+  nodes.forEach(m => {
     if (m.liege_id && byId[m.liege_id]) {
       byId[m.liege_id].children.push(m);
     }
   });
-  // Sort children by height desc (higher tier first), then level desc
-  roster.forEach(m => {
-    m.children.sort((a,b) => b.height - a.height || (b.level||0) - (a.level||0));
+  nodes.forEach(m => {
+    m.children.sort((a, b) => (b.level || 0) - (a.level || 0));
   });
-  return roster.filter(m => !m.liege_id || !byId[m.liege_id]);
+  return nodes.filter(m => !m.liege_id || !byId[m.liege_id]);
 }
 
-// Render a single member node
-// tNum: explicit tier number (1–4) from position in tree; overrides height-derived value
-function renderMember(m, isProposed=false, tNum=null) {
-  if (tNum === null) tNum = isProposed ? 4 : tierNum(m.height);
-  const hasKids = isProposed
-    ? ((m.t2s||[]).length + (m.t3s||[]).length + (m.t4s||[]).length) > 0
-    : (m.children && m.children.length > 0);
-  const followers = m.followers || 0;
-  const lvl = m.level != null ? 'K' + m.level : '';
-  const offMap = !m.on_map ? '<span class="off-map" title="Not found in map sweep">⚠</span>' : '';
-  const wing = m.wing ? ` <span class="proposed-badge">${m.wing}</span>` : '';
-
-  const cardClass = ['member-card', hasKids ? 'has-children' : 'no-children'].join(' ');
-  return `
-    <div class="${cardClass}" data-tier="${tNum}" onclick="toggleNode(this)">
-      <span class="tier-badge tb-${tNum}">T${tNum}</span>
-      <span class="member-name">${m.name}</span>${offMap}${wing}
-      ${lvl ? `<span class="member-level">${lvl}</span>` : ''}
-      ${followers > 0 ? `<span class="member-followers">${followers} bannermen</span>` : ''}
-    </div>`;
-}
-
-// Render flat roster as a hierarchy — tier label comes from depth, not height
 function renderTreeNodes(roots) {
   function renderNode(m, depth) {
-    const tNum = depth + 1;  // root=T1, child-of-root=T2, etc.
-    const card = renderMember(m, false, tNum);
+    const tNum = Math.min(depth + 1, 4);
     const kids = m.children || [];
-    if (!kids.length) return `<li>${card}</li>`;
+    const hasKids = kids.length > 0;
+    const cls = hasKids ? 'has-children' : 'no-children';
+    const lvl = m.level ? `<span class="member-level">K${m.level}</span>` : '';
+    const followers = kids.length > 0 ? `<span class="member-followers">${countDesc(m)} bannermen</span>` : '';
+
+    let btns = '';
+    if (moveSource) {
+      if (m.id === moveSource) {
+        btns = `<button class="comb-btn cancel" onclick="cancelMove()">&#10005;</button>`;
+      } else if (isValidTarget(m.id)) {
+        btns = `<button class="comb-btn place" onclick="placeUnder('${m.id}',event)">&larr; Here</button>`;
+      }
+    } else {
+      btns = `<button class="comb-btn pick" onclick="startMove('${m.id}',event)" title="Move">&#8693; Move</button>`;
+      btns += `<button class="comb-btn remove" onclick="removeMember('${m.id}')" title="Remove">&times;</button>`;
+    }
+
+    const moveCls = moveSource === m.id ? ' comb-moving' : '';
+    const targetCls = moveSource && isValidTarget(m.id) ? ' comb-can-target' : '';
+    const dimCls = moveSource && m.id !== moveSource && !isValidTarget(m.id) ? ' comb-disabled' : '';
+
+    const card = `<div class="member-card ${cls}${moveCls}${targetCls}${dimCls}" data-tier="${tNum}" onclick="toggleNode(this)">
+      <span class="tier-badge tb-${tNum}">T${tNum}</span>
+      <span class="member-name">${esc(m.name)}</span>${lvl}${followers}
+      <span class="comb-btns" onclick="event.stopPropagation()">${btns}</span>
+    </div>`;
+
+    if (!hasKids) return `<li>${card}</li>`;
     const childHtml = kids.map(kid => renderNode(kid, depth + 1)).join('');
-    return `<li>${card}<ul class="children">${childHtml}</ul></li>`;
+    return `<li>${card}<ul class="children open">${childHtml}</ul></li>`;
   }
   return `<ul class="tree">${roots.map(m => renderNode(m, 0)).join('')}</ul>`;
 }
 
-// Render proposed combined tree
-function renderCombined(node) {
-  const t2s = node.t2s || [];
-  const card = renderMember(node, true, node.proposedTier || 1);
-  if (!t2s.length) return `<li>${card}</li>`;
-
-  function makeT4Group(t4s) {
-    return `<li>
-      <div class="member-card has-children" data-tier="4" onclick="toggleNode(this)">
-        <span class="tier-badge tb-4">T4</span>
-        <span class="member-name">${t4s.length} members</span>
-      </div>
-      <ul class="children">
-        ${t4s.map(t4 => `<li>${renderMember(t4, true, 4)}</li>`).join('')}
-      </ul></li>`;
-  }
-
-  let html = `<li>${card}<ul class="children open">`;
-  html += t2s.map(t2 => {
-    const hasThreed = (t2.t3s||[]).length > 0;
-    const hasFoured = (t2.t4s||[]).length > 0;
-    const hasSubKids = hasThreed || hasFoured;
-
-    // T3 list: T4 group is nested inside the last T3 (one-tier rule)
-    let t3Html = '';
-    if (hasThreed) {
-      t3Html = t2.t3s.map((t3, i) => {
-        const isLast = i === t2.t3s.length - 1;
-        if (isLast && hasFoured) {
-          const t3Card = renderMember(t3, true, 3).replace('no-children', 'has-children');
-          return `<li>${t3Card}<ul class="children open">${makeT4Group(t2.t4s)}</ul></li>`;
-        }
-        return `<li>${renderMember(t3, true, 3)}</li>`;
-      }).join('');
-    }
-
-    // No T3s: show placeholder instead of dumping T4s directly under T2
-    let placeholderHtml = '';
-    if (!hasThreed && hasFoured) {
-      placeholderHtml = `<li>
-        <div class="member-card no-children" data-tier="3" style="opacity:0.55;font-style:italic">
-          <span class="tier-badge tb-3">T3</span>
-          <span class="member-name">5 open slots — ${t2.t4s.length} T4s pending T3 assignment</span>
-        </div>
-      </li>`;
-    }
-
-    const t2Card = renderMember(t2, true, 2);
-    if (!hasSubKids) return `<li>${t2Card}</li>`;
-    return `<li>${t2Card.replace('no-children', 'has-children')}<ul class="children open">${t3Html}${placeholderHtml}</ul></li>`;
-  }).join('');
-  html += '</ul></li>';
-  return html;
+function countDesc(m) {
+  let count = 0;
+  const q = [...(m.children || [])];
+  while (q.length) { count++; const c = q.shift(); q.push(...(c.children || [])); }
+  return count;
 }
 
-// ─── Combined interactive state ──────────────────────────────────────────────
-let combNodes = {};   // id → {id, name, level, parentId, alliance}
-let combMoveSource = null;
+// ─── Move operations ────────────────────────────────────────────────────────
+function startMove(id, e) {
+  e.stopPropagation();
+  moveSource = moveSource === id ? null : id;
+  renderView();
+}
 
-function initCombinedState() {
-  combNodes = {};
-  combMoveSource = null;
-  // Build real-roster map for T4→T3 liege lookup
+function cancelMove() {
+  moveSource = null;
+  renderView();
+}
+
+function placeUnder(targetId, e) {
+  e.stopPropagation();
+  if (!moveSource) return;
+  const member = allMembers().find(m => m.id === moveSource);
+  if (member) member.liege_id = targetId;
+  moveSource = null;
+  refreshAll();
+}
+
+function isValidTarget(id) {
+  if (!moveSource || id === moveSource) return false;
+  // Can't move under own descendant
+  let cur = id;
+  const all = allMembers();
   const byId = {};
-  [...RAW.r3vrs, ...RAW.kboom].forEach(p => { byId[p.id] = p; });
-
-  const c = RAW.combined;
-  combNodes[c.id] = { id: c.id, name: c.name, level: c.level, parentId: null, alliance: 'SHARED' };
-
-  const t3Set = new Set();
-  (c.t2s || []).forEach(t2 => {
-    const wing = t2.wing || 'SHARED';
-    combNodes[t2.id] = { id: t2.id, name: t2.name, level: t2.level, parentId: c.id, alliance: wing };
-    (t2.t3s || []).forEach(t3 => {
-      combNodes[t3.id] = { id: t3.id, name: t3.name, level: t3.level, parentId: t2.id, alliance: wing };
-      t3Set.add(t3.id);
-    });
-    (t2.t4s || []).forEach(t4 => {
-      // Explicit override wins; otherwise use real liege if it's a known T3, else fall back to T2
-      const explicitPid = t4.parentId;
-      const realLiege = byId[t4.id]?.liege_id;
-      const pid = explicitPid || ((realLiege && t3Set.has(realLiege)) ? realLiege : t2.id);
-      combNodes[t4.id] = { id: t4.id, name: t4.name, level: t4.level, parentId: pid, alliance: wing };
-    });
-  });
-}
-
-function combKids(id) {
-  return Object.values(combNodes)
-    .filter(n => n.parentId === id)
-    .sort((a, b) => (b.level || 0) - (a.level || 0));
-}
-
-function combDepth(id) {
-  let d = 0, cur = id;
-  while (combNodes[cur]?.parentId) { cur = combNodes[cur].parentId; if (++d > 5) break; }
-  return d;
-}
-
-function combDesc(id) {
-  const out = new Set();
-  const q = combKids(id).map(c => c.id);
-  while (q.length) {
-    const cur = q.shift();
-    out.add(cur);
-    combKids(cur).forEach(c => q.push(c.id));
+  all.forEach(m => { byId[m.id] = m; });
+  while (cur) {
+    if (cur === moveSource) return false;
+    cur = byId[cur]?.liege_id;
   }
-  return out;
+  return true;
 }
 
-function combStartMove(id, e) {
-  e.stopPropagation();
-  combMoveSource = (combMoveSource === id) ? null : id;
-  renderView();
-}
-
-function combCancelMove() { combMoveSource = null; renderView(); }
-
-function combPlaceUnder(targetId, e) {
-  e.stopPropagation();
-  if (!combMoveSource) return;
-  combNodes[combMoveSource].parentId = targetId;
-  combMoveSource = null;
-  renderView();
-}
-
-function combPromote(id, e) {
-  e.stopPropagation();
-  const n = combNodes[id];
-  if (!n?.parentId) return;
-  const gp = combNodes[n.parentId]?.parentId;
-  if (gp === undefined || gp === null) return;  // already T2 — don't co-root
-  n.parentId = gp;
-  renderView();
-}
-
-function combDemote(id, e) {
-  e.stopPropagation();
-  const n = combNodes[id];
-  if (!n?.parentId) return;
-  // Move under the first eligible sibling (not itself, not too deep)
-  const siblings = combKids(n.parentId).filter(s => s.id !== id && combDepth(s.id) < 3);
-  if (!siblings.length) return;
-  // Prefer the sibling with the most existing children
-  siblings.sort((a, b) => combKids(b.id).length - combKids(a.id).length);
-  n.parentId = siblings[0].id;
-  renderView();
-}
-
-function renderCombinedInteractive() {
-  const root = Object.values(combNodes).find(n => !n.parentId);
-  if (!root) return '<p>No data.</p>';
-
-  const inMove = combMoveSource !== null;
-  const desc = inMove ? combDesc(combMoveSource) : null;
-
-  function validTarget(id) {
-    if (!inMove || id === combMoveSource) return false;
-    if (desc?.has(id)) return false;
-    return combDepth(id) < 3;  // T1/T2/T3 can accept children; T4 (depth 3) cannot
-  }
-
-  function renderNode(n, depth) {
-    const tier = depth + 1;
-    const kids = combKids(n.id);
-    const isSource = inMove && n.id === combMoveSource;
-    const isTarget = validTarget(n.id);
-    const isGray   = inMove && !isSource && !isTarget;
-
-    const aB = (n.alliance && n.alliance !== 'SHARED')
-      ? `<span class="proposed-badge">${n.alliance}</span>` : '';
-    const lvl = n.level ? `<span class="member-level">K${n.level}</span>` : '';
-
-    let btns = '';
-    if (inMove) {
-      if (isSource) btns = `<button class="comb-btn cancel" onclick="combCancelMove()">✕</button>`;
-      else if (isTarget) btns = `<button class="comb-btn place" onclick="combPlaceUnder('${n.id}',event)">← Here</button>`;
-    } else if (depth > 0) {
-      const canPromote = depth >= 2;
-      const hasSib = combKids(combNodes[n.id].parentId)
-        .some(s => s.id !== n.id && combDepth(s.id) < 3);
-      if (canPromote) btns += `<button class="comb-btn promote" onclick="combPromote('${n.id}',event)" title="Move up one tier">↑ Up</button>`;
-      if (hasSib)    btns += `<button class="comb-btn demote"  onclick="combDemote('${n.id}',event)"  title="Move down under a sibling">↓ Down</button>`;
-      btns += `<button class="comb-btn pick" onclick="combStartMove('${n.id}',event)" title="Move anywhere">⇅ Move</button>`;
-    }
-
-    const cls = [
-      'member-card', kids.length ? 'has-children' : 'no-children',
-      isSource ? 'comb-moving'     : '',
-      isTarget ? 'comb-can-target' : '',
-      isGray   ? 'comb-disabled'   : '',
-    ].filter(Boolean).join(' ');
-
-    const clk = (!inMove || isSource) ? 'onclick="toggleNode(this)"' : '';
-    const card = `<div class="${cls}" data-tier="${tier}" ${clk}>
-      <span class="tier-badge tb-${tier}">T${tier}</span>
-      <span class="member-name">${n.name}</span>${aB}${lvl}
-      ${btns ? `<span class="comb-btns" onclick="event.stopPropagation()">${btns}</span>` : ''}
-    </div>`;
-
-    if (!kids.length) return `<li>${card}</li>`;
-    return `<li>${card}<ul class="children open">${kids.map(k => renderNode(k, depth + 1)).join('')}</ul></li>`;
-  }
-
-  const banner = inMove
-    ? `<div class="move-banner">Moving <strong>${combNodes[combMoveSource]?.name}</strong>
-         — click <strong>← Here</strong> on the desired new parent
-         <button onclick="combCancelMove()">✕ Cancel</button></div>`
-    : '';
-
-  return banner + `<ul class="tree">${renderNode(root, 0)}</ul>`;
-}
-
-// Toggle expand/collapse
-function toggleNode(card) {
-  const children = card.nextElementSibling;
-  if (!children || !children.classList.contains('children')) return;
-  card.classList.toggle('open');
-  children.classList.toggle('open');
-}
-
-// Current state
-let currentView = 'r3vrs';
-let hiddenTiers = new Set();
-let searchQuery = '';
-
+// ─── View rendering ─────────────────────────────────────────────────────────
 function renderView() {
+  if (!currentView || !alliances[currentView]) return;
   const container = document.getElementById('view-container');
   const statsRow = document.getElementById('stats-row');
+  const roster = alliances[currentView];
+  const roots = buildTree(roster);
 
-  if (currentView === 'r3vrs') {
-    const roster = RAW.r3vrs;
-    const roots = buildTree(roster);
-    container.innerHTML = renderTreeNodes(roots);
-    statsRow.innerHTML = statPills([
-      ['Members', roster.length],
-      ['T2 Bannermen', roster.filter(m=>m.height===3).length],
-      ['T3 Officers', roster.filter(m=>m.height===2).length],
-      ['T4 Members', roster.filter(m=>m.height===1).length],
-      ['Off-map', roster.filter(m=>!m.on_map).length],
-    ]);
-  } else if (currentView === 'kboom') {
-    const roster = RAW.kboom;
-    const roots = buildTree(roster);
-    container.innerHTML = renderTreeNodes(roots);
-    statsRow.innerHTML = statPills([
-      ['Members', roster.length],
-      ['T2 Bannermen', roster.filter(m=>m.height===3).length],
-      ['T3 Officers', roster.filter(m=>m.height===2).length],
-      ['T4 Members', roster.filter(m=>m.height===1).length],
-    ]);
-  } else {
-    container.innerHTML =
-      `<button class="comb-reset" onclick="initCombinedState();renderView()">↺ Reset to default</button>` +
-      renderCombinedInteractive();
-    const r3n  = Object.values(combNodes).filter(n => n.alliance === 'R3VRS').length;
-    const kbn  = Object.values(combNodes).filter(n => n.alliance === 'KB00M').length;
-    const root = Object.values(combNodes).find(n => !n.parentId);
-    statsRow.innerHTML = statPills([
-      ['Total', Object.keys(combNodes).length],
-      ['R3VRS', r3n],
-      ['KB00M', kbn],
-      ['T2 Wings', root ? combKids(root.id).length : 0],
-    ]);
-  }
+  container.innerHTML = renderTreeNodes(roots);
+  const byId = {};
+  roster.forEach(m => { byId[m.id] = m; });
+  const rootMembers = roster.filter(m => !m.liege_id || !byId[m.liege_id]);
+  statsRow.innerHTML = statPills([
+    ['Members', roster.length],
+    ['Roots', rootMembers.length],
+  ]);
+
   applyFilters();
+
+  setTimeout(() => {
+    document.querySelectorAll('.tree > li > .member-card.has-children').forEach(c => {
+      c.classList.add('open');
+      const children = c.nextElementSibling;
+      if (children) children.classList.add('open');
+    });
+  }, 0);
 }
 
 function statPills(pairs) {
@@ -579,32 +757,35 @@ function statPills(pairs) {
   ).join('');
 }
 
+function toggleNode(card) {
+  const children = card.nextElementSibling;
+  if (!children || !children.classList.contains('children')) return;
+  card.classList.toggle('open');
+  children.classList.toggle('open');
+}
+
 function applyFilters() {
   const container = document.getElementById('view-container');
   const q = searchQuery.toLowerCase().trim();
 
-  // Tier visibility
   container.querySelectorAll('[data-tier]').forEach(el => {
     const t = +el.dataset.tier;
-    const card = el.classList.contains('member-card') ? el : null;
-    if (card) {
-      card.closest('li').classList.toggle('tier-hidden', hiddenTiers.has(t));
+    if (el.classList.contains('member-card')) {
+      el.closest('li').classList.toggle('tier-hidden', hiddenTiers.has(t));
     }
   });
 
-  // Search
   if (q) {
     container.classList.add('search-dim');
     container.querySelectorAll('.member-name').forEach(el => {
       const matches = el.textContent.toLowerCase().includes(q);
       el.classList.toggle('highlight', matches);
-      // Expand parents if child matches
       if (matches) {
         let node = el.closest('li');
         while (node) {
-          const children = node.querySelector('.children');
+          const ch = node.querySelector('.children');
           const card = node.querySelector('.member-card');
-          if (children && card) { children.classList.add('open'); card.classList.add('open'); }
+          if (ch && card) { ch.classList.add('open'); card.classList.add('open'); }
           node = node.parentElement && node.parentElement.closest('li');
         }
       }
@@ -615,21 +796,7 @@ function applyFilters() {
   }
 }
 
-// Tab switching
-document.querySelectorAll('.ac-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.ac-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentView = tab.dataset.view;
-    hiddenTiers.clear();
-    document.querySelectorAll('.tier-btn').forEach(b => b.classList.remove('dimmed'));
-    searchQuery = '';
-    document.getElementById('search').value = '';
-    renderView();
-  });
-});
-
-// Expand/collapse all
+// ─── Controls ───────────────────────────────────────────────────────────────
 document.getElementById('expand-all').addEventListener('click', () => {
   document.querySelectorAll('.children').forEach(c => c.classList.add('open'));
   document.querySelectorAll('.member-card.has-children').forEach(c => c.classList.add('open'));
@@ -637,7 +804,6 @@ document.getElementById('expand-all').addEventListener('click', () => {
 document.getElementById('collapse-all').addEventListener('click', () => {
   document.querySelectorAll('.children').forEach(c => c.classList.remove('open'));
   document.querySelectorAll('.member-card.has-children').forEach(c => c.classList.remove('open'));
-  // Re-open root level
   document.querySelectorAll('.tree > li > ul.children').forEach(c => {
     c.classList.add('open');
     const card = c.previousElementSibling;
@@ -645,7 +811,6 @@ document.getElementById('collapse-all').addEventListener('click', () => {
   });
 });
 
-// Tier filter
 document.querySelectorAll('.tier-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const t = +btn.dataset.tier;
@@ -655,28 +820,30 @@ document.querySelectorAll('.tier-btn').forEach(btn => {
   });
 });
 
-// Search
 document.getElementById('search').addEventListener('input', e => {
   searchQuery = e.target.value;
   applyFilters();
 });
 
-// Initialize combined editor state once
-initCombinedState();
-// Update tab counts from live data
-document.querySelector('[data-view="r3vrs"]').textContent = `R3VRS · ${RAW.r3vrs.length}`;
-document.querySelector('[data-view="kboom"]').textContent = `KB00M · ${RAW.kboom.length}`;
+// ─── Local Storage persistence ──────────────────────────────────────────────
+const STORAGE_KEY = 'gotc-banner-council';
 
-// Initial render
-renderView();
-// Open root level by default
-setTimeout(() => {
-  document.querySelectorAll('.tree > li > .member-card.has-children').forEach(c => {
-    c.classList.add('open');
-    const children = c.nextElementSibling;
-    if (children) children.classList.add('open');
-  });
-}, 0);
+function saveToStorage() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(alliances)); } catch (e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (data && typeof data === 'object') {
+      Object.assign(alliances, data);
+    }
+  } catch (e) {}
+}
+
+// ─── Init ───────────────────────────────────────────────────────────────────
+loadFromStorage();
+refreshAll();
 </script>
 </body>
 </html>

@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stonemason's Lodge — GoT Conquest Calculator</title>
+<meta name="description" content="Calculate building enhancement material costs in Game of Thrones: Conquest.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .build-entry { border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background: var(--bg-card); }
+  .build-entry h3 { margin: 0 0 0.75rem; font-family: 'Cinzel', Georgia, serif; color: var(--gold); font-size: 1rem; display: flex; justify-content: space-between; align-items: center; }
+  .build-entry h3 button { background: none; border: 1px solid var(--blood); color: var(--blood); font-family: 'Cinzel', Georgia, serif; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; cursor: pointer; letter-spacing: 0.05em; }
+  .build-entry h3 button:hover { background: var(--blood); color: var(--text); }
+  .enh-row { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .enh-row label { flex: 1 1 200px; font-size: 0.95rem; color: var(--text-muted); }
+  .enh-row .val-select, .enh-row .val-input { flex: 0 0 80px; }
+  .level-range { display: flex; gap: 0.5rem; align-items: center; }
+  .level-range span { color: var(--gold-faint); font-family: 'Cinzel', Georgia, serif; font-size: 0.75rem; }
+  .e4-bonuses { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+  .e4-bonuses h4 { margin: 0 0 0.5rem; font-family: 'Cinzel', Georgia, serif; color: var(--gold-dim); font-size: 0.85rem; }
+  .e4-bonus-row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 2px 0; }
+  .e4-bonus-row .bonus-type { color: var(--text-muted); }
+  .e4-bonus-row .bonus-val { color: var(--gold); font-family: 'Cinzel', Georgia, serif; }
+  .totals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
+  .mat-card { background: var(--bg-card-raised); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; text-align: center; }
+  .mat-card .mat-name { font-family: 'Cinzel', Georgia, serif; font-size: 0.75rem; color: var(--gold-faint); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.25rem; }
+  .mat-card .mat-val { font-family: 'Cinzel', Georgia, serif; font-size: 1.25rem; color: var(--gold-bright); }
+  .mat-card .mat-adj { font-size: 0.8rem; color: var(--gold-dim); }
+  .eff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+  .eff-grid .row { margin-bottom: 0; }
+  .breakdown-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .breakdown-table th, .breakdown-table td { padding: 4px 8px; text-align: right; border-bottom: 1px solid var(--border); }
+  .breakdown-table th { color: var(--gold-faint); font-family: 'Cinzel', Georgia, serif; font-size: 0.7rem; letter-spacing: 0.05em; }
+  .breakdown-table td:first-child, .breakdown-table th:first-child { text-align: left; }
+  .breakdown-table tbody tr:hover { background: var(--bg-card-raised); }
+  .add-building-row { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+  .add-building-row select { flex: 1 1 200px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <nav class="nav">
+    <a href="index.html">Prestige Ledger</a>
+    <a href="keep-upgrade.html">Night's Watch: The Builders</a>
+    <a href="gendrys-forge.html">Gendry's Forge</a>
+    <a href="enhance.html" class="current">Stonemason's Lodge</a>
+    <a href="alliance-tree.html">Banner Council</a>
+    <a href="klash-roster.html">KLASH Roster</a>
+  </nav>
+
+  <div class="crest">⚔ ✦ ⚔</div>
+  <h1 class="title">Stonemason's Lodge</h1>
+  <p class="subtitle">Calculate building enhancement material costs</p>
+
+  <div class="panel" id="wrap">
+
+    <h2>Buildings</h2>
+    <div class="add-building-row">
+      <select id="building-select" class="val-select"></select>
+      <button type="button" id="add-building" class="btn-gold">+ Add Building</button>
+    </div>
+    <div id="building-entries"></div>
+
+    <div class="divider"></div>
+
+    <h2>Cost Efficiency</h2>
+    <p class="inv-hint">Enter your material cost efficiency percentages from in-game stats. Higher values reduce material costs.</p>
+    <div class="eff-grid" id="eff-grid"></div>
+
+    <div class="divider"></div>
+
+    <h2>Totals</h2>
+    <div class="totals-grid" id="totals-grid"></div>
+
+    <div class="divider"></div>
+
+    <details class="collapse" id="breakdown-details">
+      <summary>Per-building breakdown</summary>
+      <div id="breakdown-body"></div>
+    </details>
+
+    <div class="footnote">
+      Enhancement costs are calculated per level range. Efficiency divisors reduce material costs: adjusted = base / (1 + efficiency/100).
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Forged in fire &amp; vanilla JavaScript · <a href="https://github.com/macaugh/gotc-companion" target="_blank" rel="noopener">view source</a></p>
+    <p><a href="https://buymeacoffee.com/laughingcr0w" target="_blank" rel="noopener">☕ Buy me a coffee</a></p>
+  </footer>
+
+</div>
+
+<script src="enhance-data.js"></script>
+<script>
+(function () {
+  const D = ENHANCE_DATA;
+  const MATS = ['Slate','Marble','Limestone','Brick','Pine','Keystone','Valyrian Stone'];
+  const MAT_KEYS = ['s','m','ls','b','p','k','vs'];
+  const buildingNames = Object.keys(D.buildings).sort();
+
+  const entries = [];
+  let entryId = 0;
+
+  const efficiencies = {};
+  MATS.forEach(m => efficiencies[m] = 0);
+
+  const $ = s => document.querySelector(s);
+  const $$ = s => document.querySelectorAll(s);
+
+  function populateBuildingSelect() {
+    const sel = $('#building-select');
+    sel.innerHTML = '';
+    buildingNames.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b;
+      opt.textContent = b;
+      sel.appendChild(opt);
+    });
+  }
+
+  function createEffGrid() {
+    const grid = $('#eff-grid');
+    MATS.forEach(mat => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `<label>${mat} Efficiency (%)</label>
+        <input type="text" inputmode="decimal" class="val-input eff-input" data-mat="${mat}" value="0" />`;
+      grid.appendChild(row);
+    });
+    grid.addEventListener('input', e => {
+      if (e.target.classList.contains('eff-input')) {
+        const mat = e.target.dataset.mat;
+        efficiencies[mat] = parseFloat(e.target.value) || 0;
+        recalc();
+      }
+    });
+  }
+
+  function getPriceTierCosts(tier, fromLevel, toLevel) {
+    const tierData = D.prices[tier];
+    if (!tierData) return null;
+    const totals = new Array(7).fill(0);
+    for (let lvl = fromLevel + 1; lvl <= toLevel; lvl++) {
+      const row = tierData.find(r => r[0] === lvl);
+      if (row) {
+        for (let i = 0; i < 7; i++) totals[i] += row[i + 1];
+      }
+    }
+    return totals;
+  }
+
+  function getE4Bonuses(buildingName, level) {
+    const bld = D.buildings[buildingName];
+    if (!bld || !bld.e4) return [];
+    const entry = bld.e4.find(e => e.l === level);
+    return entry ? entry.e : [];
+  }
+
+  function addBuilding(name) {
+    const id = entryId++;
+    const bld = D.buildings[name];
+    const enhNames = Object.keys(bld.enhancements);
+
+    const entry = {
+      id,
+      name,
+      levels: {},
+      e4From: 0,
+      e4To: 0
+    };
+    enhNames.forEach(e => entry.levels[e] = { from: 0, to: 0 });
+    entries.push(entry);
+
+    renderEntry(entry);
+    recalc();
+  }
+
+  function renderEntry(entry) {
+    const bld = D.buildings[entry.name];
+    const enhNames = Object.keys(bld.enhancements);
+    const div = document.createElement('div');
+    div.className = 'build-entry';
+    div.id = 'entry-' + entry.id;
+
+    let html = `<h3><span>${entry.name}</span><button type="button" data-remove="${entry.id}">Remove</button></h3>`;
+
+    enhNames.forEach(enhName => {
+      const tier = bld.enhancements[enhName];
+      html += `<div class="enh-row">
+        <label>${enhName} <span style="color:var(--gold-faint);font-size:0.75rem">(${tier})</span></label>
+        <div class="level-range">
+          <span>From</span>
+          <input type="text" inputmode="numeric" class="val-input enh-level" data-entry="${entry.id}" data-enh="${enhName}" data-dir="from" value="0" style="width:60px" />
+          <span>To</span>
+          <input type="text" inputmode="numeric" class="val-input enh-level" data-entry="${entry.id}" data-enh="${enhName}" data-dir="to" value="0" style="width:60px" />
+        </div>
+      </div>`;
+    });
+
+    html += `<div class="enh-row">
+      <label>Enhancement 4 <span style="color:var(--gold-faint);font-size:0.75rem">(Special)</span></label>
+      <div class="level-range">
+        <span>From</span>
+        <input type="text" inputmode="numeric" class="val-input e4-level" data-entry="${entry.id}" data-dir="from" value="0" style="width:60px" />
+        <span>To</span>
+        <input type="text" inputmode="numeric" class="val-input e4-level" data-entry="${entry.id}" data-dir="to" value="0" style="width:60px" />
+      </div>
+    </div>`;
+
+    html += `<div class="e4-bonuses" id="e4-bonuses-${entry.id}"></div>`;
+
+    div.innerHTML = html;
+    $('#building-entries').appendChild(div);
+
+    div.addEventListener('input', e => {
+      if (e.target.classList.contains('enh-level')) {
+        const eid = parseInt(e.target.dataset.entry);
+        const enhName = e.target.dataset.enh;
+        const dir = e.target.dataset.dir;
+        const val = Math.max(0, Math.min(40, parseInt(e.target.value) || 0));
+        const ent = entries.find(en => en.id === eid);
+        if (ent) {
+          ent.levels[enhName][dir] = val;
+          recalc();
+        }
+      }
+      if (e.target.classList.contains('e4-level')) {
+        const eid = parseInt(e.target.dataset.entry);
+        const dir = e.target.dataset.dir;
+        const val = Math.max(0, Math.min(40, parseInt(e.target.value) || 0));
+        const ent = entries.find(en => en.id === eid);
+        if (ent) {
+          ent['e4' + (dir === 'from' ? 'From' : 'To')] = val;
+          renderE4Bonuses(ent);
+          recalc();
+        }
+      }
+    });
+
+    div.querySelector('[data-remove]').addEventListener('click', e => {
+      const eid = parseInt(e.target.dataset.remove);
+      const idx = entries.findIndex(en => en.id === eid);
+      if (idx !== -1) entries.splice(idx, 1);
+      div.remove();
+      recalc();
+    });
+
+    renderE4Bonuses(entry);
+  }
+
+  function renderE4Bonuses(entry) {
+    const container = document.getElementById('e4-bonuses-' + entry.id);
+    if (!container) return;
+    if (entry.e4To <= 0) { container.innerHTML = ''; return; }
+
+    const bonuses = getE4Bonuses(entry.name, entry.e4To);
+    if (!bonuses.length) { container.innerHTML = ''; return; }
+
+    let html = '<h4>Enhancement 4 Bonuses at Level ' + entry.e4To + '</h4>';
+    bonuses.forEach(b => {
+      const val = typeof b.v === 'number' && b.v !== 0
+        ? (String(b.v).includes('.') || b.v > 100 ? formatNum(b.v) : b.v + '%')
+        : '—';
+      html += `<div class="e4-bonus-row"><span class="bonus-type">${b.t}</span><span class="bonus-val">${val}</span></div>`;
+    });
+    container.innerHTML = html;
+  }
+
+  function calcEntryCosts(entry) {
+    const bld = D.buildings[entry.name];
+    const totals = new Array(7).fill(0);
+
+    for (const [enhName, range] of Object.entries(entry.levels)) {
+      if (range.to <= range.from) continue;
+      const tier = bld.enhancements[enhName];
+      const costs = getPriceTierCosts(tier, range.from, range.to);
+      if (costs) {
+        for (let i = 0; i < 7; i++) totals[i] += costs[i];
+      }
+    }
+
+    if (entry.e4To > entry.e4From) {
+      const costs = getPriceTierCosts('Special', entry.e4From, entry.e4To);
+      if (costs) {
+        for (let i = 0; i < 7; i++) totals[i] += costs[i];
+      }
+    }
+
+    return totals;
+  }
+
+  function applyEfficiency(totals) {
+    return totals.map((val, i) => {
+      const eff = efficiencies[MATS[i]] || 0;
+      return Math.ceil(val / (1 + eff / 100));
+    });
+  }
+
+  function formatNum(n) {
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return n.toLocaleString();
+  }
+
+  function recalc() {
+    const grandTotals = new Array(7).fill(0);
+    const perBuilding = [];
+
+    entries.forEach(entry => {
+      const raw = calcEntryCosts(entry);
+      const adj = applyEfficiency(raw);
+      for (let i = 0; i < 7; i++) grandTotals[i] += raw[i];
+      perBuilding.push({ name: entry.name, raw, adj });
+    });
+
+    const adjGrand = applyEfficiency(grandTotals);
+
+    const totalsGrid = $('#totals-grid');
+    totalsGrid.innerHTML = '';
+    MATS.forEach((mat, i) => {
+      if (grandTotals[i] === 0 && adjGrand[i] === 0) return;
+      const card = document.createElement('div');
+      card.className = 'mat-card';
+      card.innerHTML = `<div class="mat-name">${mat}</div>
+        <div class="mat-val">${formatNum(adjGrand[i])}</div>
+        ${adjGrand[i] !== grandTotals[i] ? `<div class="mat-adj">base: ${formatNum(grandTotals[i])}</div>` : ''}`;
+      totalsGrid.appendChild(card);
+    });
+
+    if (entries.length === 0) {
+      totalsGrid.innerHTML = '<p style="color:var(--text-muted);grid-column:1/-1">Add buildings above to calculate costs.</p>';
+    }
+
+    const breakdownBody = $('#breakdown-body');
+    if (perBuilding.length === 0) {
+      breakdownBody.innerHTML = '';
+      return;
+    }
+
+    let thtml = '<table class="breakdown-table"><thead><tr><th>Building</th>';
+    const visibleMats = MATS.filter((_, i) => grandTotals[i] > 0);
+    visibleMats.forEach(m => thtml += `<th>${m}</th>`);
+    thtml += '</tr></thead><tbody>';
+
+    perBuilding.forEach(pb => {
+      thtml += `<tr><td>${pb.name}</td>`;
+      visibleMats.forEach(m => {
+        const idx = MATS.indexOf(m);
+        const val = pb.adj[idx];
+        thtml += `<td>${val > 0 ? formatNum(val) : '—'}</td>`;
+      });
+      thtml += '</tr>';
+    });
+
+    thtml += `<tr style="border-top:2px solid var(--gold-dark);font-weight:bold"><td>Total</td>`;
+    visibleMats.forEach(m => {
+      const idx = MATS.indexOf(m);
+      thtml += `<td>${formatNum(adjGrand[idx])}</td>`;
+    });
+    thtml += '</tr></tbody></table>';
+    breakdownBody.innerHTML = thtml;
+
+    save();
+  }
+
+  function save() {
+    const state = {
+      entries: entries.map(e => ({ name: e.name, levels: e.levels, e4From: e.e4From, e4To: e.e4To })),
+      efficiencies
+    };
+    try { localStorage.setItem('gotc-stonemason', JSON.stringify(state)); } catch(e) {}
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem('gotc-stonemason');
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      if (state.efficiencies) {
+        MATS.forEach(m => {
+          if (state.efficiencies[m] !== undefined) {
+            efficiencies[m] = state.efficiencies[m];
+            const inp = document.querySelector(`.eff-input[data-mat="${m}"]`);
+            if (inp) inp.value = efficiencies[m];
+          }
+        });
+      }
+      if (state.entries) {
+        state.entries.forEach(se => {
+          if (!D.buildings[se.name]) return;
+          const id = entryId++;
+          const bld = D.buildings[se.name];
+          const enhNames = Object.keys(bld.enhancements);
+          const entry = { id, name: se.name, levels: {}, e4From: se.e4From || 0, e4To: se.e4To || 0 };
+          enhNames.forEach(e => entry.levels[e] = se.levels[e] || { from: 0, to: 0 });
+          entries.push(entry);
+          renderEntry(entry);
+          const div = document.getElementById('entry-' + id);
+          if (div) {
+            enhNames.forEach(e => {
+              const fromInp = div.querySelector(`.enh-level[data-enh="${e}"][data-dir="from"]`);
+              const toInp = div.querySelector(`.enh-level[data-enh="${e}"][data-dir="to"]`);
+              if (fromInp) fromInp.value = entry.levels[e].from;
+              if (toInp) toInp.value = entry.levels[e].to;
+            });
+            const e4From = div.querySelector('.e4-level[data-dir="from"]');
+            const e4To = div.querySelector('.e4-level[data-dir="to"]');
+            if (e4From) e4From.value = entry.e4From;
+            if (e4To) e4To.value = entry.e4To;
+          }
+        });
+      }
+      recalc();
+    } catch(e) {}
+  }
+
+  populateBuildingSelect();
+  createEffGrid();
+
+  $('#add-building').addEventListener('click', () => {
+    const sel = $('#building-select');
+    addBuilding(sel.value);
+  });
+
+  load();
+  if (entries.length === 0) recalc();
+})();
+</script>
+</body>
+</html>
