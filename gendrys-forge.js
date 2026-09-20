@@ -7,11 +7,21 @@
     season7, season8, season9, season10, season11, season12, season13, season14, seasonctw
   ];
 
-  function matDisplayName(key) {
+  function matInfo(key) {
     for (const s of Object.values(materials)) {
-      if (s.mats && s.mats[key]) return s.mats[key]['Original-name'];
+      if (s.mats && s.mats[key]) return s.mats[key];
     }
-    return key.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return null;
+  }
+
+  function matDisplayName(key) {
+    const info = matInfo(key);
+    return info ? info['Original-name'] : key.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  function matImg(key) {
+    const info = matInfo(key);
+    return info && info.img ? `<img src="${info.img}" alt="" class="mat-icon">` : '';
   }
 
   function seasonLabel(s) {
@@ -171,6 +181,7 @@
     const sortedMats = Object.entries(matTotals).sort((a, b) => b[1] - a[1]);
     for (const [mat, amt] of sortedMats) {
       html += `<div class="stat-card">
+        ${matImg(mat)}
         <div class="stat-label">${matDisplayName(mat)}</div>
         <div class="stat-value">${amt.toLocaleString()}</div>
       </div>`;
@@ -179,7 +190,7 @@
 
     html += '<table class="totals"><thead><tr><th>Piece</th><th>Quality</th>';
     const matKeys = sortedMats.map(([k]) => k);
-    for (const k of matKeys) html += `<th>${matDisplayName(k)}</th>`;
+    for (const k of matKeys) html += `<th>${matImg(k)} ${matDisplayName(k)}</th>`;
     html += '</tr></thead><tbody>';
 
     for (const p of selected) {
@@ -239,6 +250,7 @@
     let html = `<div class="stats-grid">`;
     for (const [mat, amt] of sortedMats) {
       html += `<div class="stat-card">
+        ${matImg(mat)}
         <div class="stat-label">${matDisplayName(mat)}</div>
         <div class="stat-value">${amt.toLocaleString()}</div>
       </div>`;
@@ -247,7 +259,7 @@
 
     const matKeys = sortedMats.map(([k]) => k);
     html += '<table class="totals"><thead><tr><th>Piece</th><th>Set</th><th>Quality</th>';
-    for (const k of matKeys) html += `<th>${matDisplayName(k)}</th>`;
+    for (const k of matKeys) html += `<th>${matImg(k)} ${matDisplayName(k)}</th>`;
     html += '</tr></thead><tbody>';
 
     for (const r of rows) {
