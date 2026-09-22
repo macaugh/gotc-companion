@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OATHS × CLASH Roster — GoT Conquest Alliance Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .page { max-width: 1100px; }
+
+  .controls {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 1.25rem; flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1; min-width: 180px; max-width: 280px;
+    background: var(--bg-card); border: 1px solid var(--border-strong);
+    color: var(--text); font-family: 'Cormorant Garamond', serif;
+    font-size: 15px; padding: 6px 12px; border-radius: 3px;
+  }
+  .search-box::placeholder { color: var(--text-muted); }
+  .search-box:focus { outline: none; border-color: var(--gold-dark); }
+  .ctrl-btn {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 6px 14px;
+    border: 1px solid var(--border-strong); border-radius: 3px;
+    background: var(--bg-card); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .ctrl-btn:hover { color: var(--gold); border-color: var(--gold-dark); }
+  .ctrl-btn.active { background: var(--blood); color: var(--gold-pale); border-color: #8b1818; }
+  .tier-filter { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tier-btn {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.08em;
+    padding: 5px 11px; border-radius: 3px; cursor: pointer;
+    border: 1px solid transparent; transition: all 0.15s; color: #fff;
+  }
+  .tier-btn[data-tier="1"] { background: #6b1818; border-color: #8b1818; }
+  .tier-btn[data-tier="2"] { background: #3a1a00; border-color: #6b4f1d; }
+  .tier-btn[data-tier="3"] { background: #0d2a12; border-color: #1a5e3a; }
+  .tier-btn[data-tier="4"] { background: #1a1a2a; border-color: #2a2a5a; }
+  .tier-btn.dimmed { opacity: 0.35; }
+
+  .stats-row {
+    display: flex; gap: 12px; margin-bottom: 1.25rem; flex-wrap: wrap;
+  }
+  .stat-pill {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 14px;
+    font-size: 13px; color: var(--text-muted);
+  }
+  .stat-pill strong { color: var(--gold); font-weight: 600; }
+  .stat-pill.removed strong { color: var(--blood); }
+
+  .tree { list-style: none; padding: 0; margin: 0; }
+  .tree ul { list-style: none; padding-left: 24px; margin: 0; position: relative; }
+  .tree ul::before {
+    content: '';
+    position: absolute; left: 10px; top: 0; bottom: 8px;
+    border-left: 1px solid var(--border-strong);
+  }
+  .tree li { position: relative; }
+  .tree li + li { margin-top: 4px; }
+  .tree ul > li::before {
+    content: '';
+    position: absolute; left: -14px; top: 18px;
+    width: 14px; border-top: 1px solid var(--border-strong);
+  }
+
+  .member-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px; border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer; transition: background 0.12s, border-color 0.12s;
+    user-select: none;
+  }
+  .member-card:hover { border-color: var(--border-strong); background: var(--bg-card-raised); }
+  .member-card.has-children::before {
+    content: '▶';
+    font-size: 9px; color: var(--text-muted);
+    transition: transform 0.15s; display: inline-block;
+    min-width: 14px;
+  }
+  .member-card.has-children.open::before { transform: rotate(90deg); }
+  .member-card.no-children::before { content: ''; min-width: 14px; }
+
+  .tier-badge {
+    font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.1em;
+    padding: 2px 8px; border-radius: 2px; white-space: nowrap; font-weight: 600;
+  }
+  .tb-1 { background: #6b1818; color: #f5d9d9; border: 1px solid #8b1818; }
+  .tb-2 { background: #3a1a00; color: var(--gold-pale); border: 1px solid var(--gold-dark); }
+  .tb-3 { background: #0d2a12; color: #a8d4b0; border: 1px solid #1a5e3a; }
+  .tb-4 { background: #1a1a2a; color: #a0a8d4; border: 1px solid #2a2a5a; }
+
+  .member-name {
+    font-size: 15px; color: var(--text); flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .member-name.highlight { color: var(--gold-bright); font-weight: 600; }
+  .member-level { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+  .member-tag { font-size: 11px; color: var(--gold-faint); white-space: nowrap; }
+
+  .tier-hidden { display: none !important; }
+  .children { display: none; }
+  .children.open { display: block; }
+  .search-dim .member-name:not(.highlight) { opacity: 0.3; }
+
+  .action-btns { display: flex; gap: 3px; margin-left: auto; padding-left: 8px; flex-shrink: 0; }
+  .action-btn {
+    font-size: 10px; padding: 1px 7px; border-radius: 2px; line-height: 1.7;
+    border: 1px solid var(--border-strong); background: var(--bg-card);
+    color: var(--text-muted); cursor: pointer;
+    font-family: 'Cinzel', serif; letter-spacing: 0.04em;
+    white-space: nowrap; transition: all 0.12s;
+  }
+  .action-btn:hover { color: var(--gold); border-color: var(--gold-dark); }
+  .action-btn.promote { color: #a8d4b0; border-color: #1a5e3a; }
+  .action-btn.promote:hover { background: #0d2a12; }
+  .action-btn.make-t1 { color: #f5d9d9; border-color: #8b1818; background: #3a0d0d; }
+  .action-btn.make-t1:hover { background: #6b1818; color: #fff; }
+  .action-btn.demote { color: #a0a8d4; border-color: #2a2a5a; }
+  .action-btn.demote:hover { background: #0d0d2a; }
+  .action-btn.pick { color: var(--gold-pale); border-color: var(--gold-dark); }
+  .action-btn.pick:hover { background: #1a1200; }
+  .action-btn.remove { color: #d48080; border-color: #5a1a1a; }
+  .action-btn.remove:hover { background: #2a0d0d; }
+  .action-btn.cancel { color: #d48080; border-color: #5a1a1a; }
+  .action-btn.cancel:hover { background: #2a0d0d; }
+  .action-btn.place { background: #0d2a12; color: #a8d4b0; border-color: #1a5e3a; }
+  .action-btn.place:hover { background: #1a3a1a; }
+
+  .member-card.moving { outline: 2px solid var(--gold); background: #1a1500 !important; }
+  .member-card.can-target { border-color: #1a5e3a !important; }
+  .member-card.disabled { opacity: 0.28; pointer-events: none; }
+
+  .move-banner {
+    background: #1a1500; border: 1px solid var(--gold-dark); border-radius: 4px;
+    padding: 8px 14px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-size: 13px; color: var(--gold-pale);
+  }
+  .move-banner strong { color: var(--gold); }
+  .move-banner button {
+    font-family: 'Cinzel', serif; font-size: 11px; padding: 3px 10px;
+    background: var(--bg-card); border: 1px solid #5a1a1a;
+    color: #d48080; cursor: pointer; border-radius: 2px; letter-spacing: 0.06em;
+  }
+
+  .removed-panel {
+    background: var(--bg-card); border: 1px solid var(--border-strong);
+    border-radius: 4px; padding: 12px 16px; margin-bottom: 1.25rem;
+  }
+  .removed-panel h3 {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--blood); margin: 0 0 8px;
+  }
+  .removed-list { display: flex; gap: 6px; flex-wrap: wrap; }
+  .removed-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(107, 24, 24, 0.15); border: 1px solid #5a1a1a;
+    border-radius: 3px; padding: 3px 10px;
+    font-size: 12px; color: #d48080;
+  }
+  .removed-chip button {
+    background: none; border: none; color: #a8d4b0; cursor: pointer;
+    font-size: 14px; padding: 0; line-height: 1;
+  }
+  .removed-chip button:hover { color: var(--gold-bright); }
+
+  .export-bar {
+    display: flex; gap: 10px; align-items: center;
+    margin-top: 1.25rem; flex-wrap: wrap;
+  }
+
+  .note-box {
+    background: var(--bg-card); border: 1px solid var(--border-strong);
+    border-radius: 4px; padding: 10px 14px;
+    font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem;
+    font-style: italic;
+  }
+  .note-box strong { color: var(--gold-dim); font-style: normal; }
+
+  .alliance-tabs { display: flex; gap: 6px; margin-bottom: 1rem; }
+  .alliance-tab {
+    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 6px 14px;
+    border: 1px solid var(--border-strong); border-radius: 3px;
+    background: var(--bg-card); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .alliance-tab:hover { color: var(--gold); border-color: var(--gold-dark); }
+  .alliance-tab.active { background: var(--blood); color: var(--gold-pale); border-color: #8b1818; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="nav">
+    <a href="index.html">Prestige Ledger</a>
+    <a href="keep-upgrade.html">Night's Watch: The Builders</a>
+    <a href="gendrys-forge.html">Gendry's Forge</a>
+    <a href="enhance.html">Stonemason's Lodge</a>
+    <a href="alliance-tree.html">Banner Council</a>
+  </nav>
+
+  <div class="crest">⚔ ✦ ⚔</div>
+  <h1 class="title">OATHS × CLASH Roster</h1>
+  <p class="subtitle">Restructure the alliances — promote, demote, move, or remove members</p>
+
+  <div class="panel">
+
+    <div class="note-box">
+      <strong>How it works:</strong>
+      <strong>Promote</strong> moves a member up one tier (to their grandparent).
+      <strong>Demote</strong> moves them down under a sibling.
+      <strong>Move</strong> lets you place them under any valid parent.
+      <strong>Remove</strong> marks them inactive (vassals reassign upward).
+      All changes are local — use <strong>Export</strong> to save the result.
+    </div>
+
+    <div class="alliance-tabs" id="alliance-tabs">
+      <div class="alliance-tab active" data-alliance="ALL">All</div>
+      <div class="alliance-tab" data-alliance="OATHS">OATHS</div>
+      <div class="alliance-tab" data-alliance="CLASH">CLASH</div>
+    </div>
+
+    <div class="controls">
+      <input type="text" class="search-box" id="search" placeholder="Search bannermen…" />
+      <button class="ctrl-btn" id="expand-all">Expand all</button>
+      <button class="ctrl-btn" id="collapse-all">Collapse all</button>
+      <div class="tier-filter" id="tier-filter">
+        <div class="tier-btn" data-tier="1">T1</div>
+        <div class="tier-btn" data-tier="2">T2</div>
+        <div class="tier-btn" data-tier="3">T3</div>
+        <div class="tier-btn" data-tier="4">T4</div>
+      </div>
+    </div>
+
+    <div class="stats-row" id="stats-row"></div>
+
+    <div id="removed-panel" style="display:none"></div>
+
+    <div id="view-container"></div>
+
+    <div class="export-bar">
+      <button class="ctrl-btn" id="export-btn">Export cleaned roster</button>
+      <button class="ctrl-btn" id="reset-btn">Reset all changes</button>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>Forged in fire &amp; vanilla JavaScript · OATHS × CLASH alliance data</p>
+    <p><a href="https://buymeacoffee.com/laughingcr0w" target="_blank" rel="noopener">☕ Buy me a coffee</a></p>
+  </footer>
+</div>
+
+<script>
+/* OATHS_CLASH_DATA_EMBED_START */
+const ROSTER = [];
+/* OATHS_CLASH_DATA_EMBED_END */
+
+// ─── Mutable state map ──────────────────────────────────────────────────────
+let nodes = {};
+let moveSource = null;
+let hiddenTiers = new Set();
+let searchQuery = '';
+let currentAlliance = 'ALL';
+
+function initState() {
+  nodes = {};
+  moveSource = null;
+  ROSTER.forEach(m => {
+    nodes[m.id] = {
+      id: m.id, name: m.name, level: m.level, tag: m.tag,
+      parentId: m.liege_id, removed: false
+    };
+  });
+}
+
+function isVisibleAlliance(tag) {
+  if (currentAlliance === 'ALL') return true;
+  if (tag && tag.startsWith('?')) return true;
+  return tag === currentAlliance;
+}
+
+function kids(id) {
+  return Object.values(nodes)
+    .filter(n => n.parentId === id && !n.removed)
+    .sort((a, b) => (b.level || 0) - (a.level || 0));
+}
+
+function depth(id) {
+  let d = 0, cur = id;
+  while (nodes[cur]?.parentId) {
+    cur = nodes[cur].parentId;
+    if (++d > 5) break;
+  }
+  return d;
+}
+
+function descendants(id) {
+  const out = new Set();
+  const q = kids(id).map(c => c.id);
+  while (q.length) {
+    const cur = q.shift();
+    out.add(cur);
+    kids(cur).forEach(c => q.push(c.id));
+  }
+  return out;
+}
+
+// ─── Actions ────────────────────────────────────────────────────────────────
+
+function doPromote(id, e) {
+  e.stopPropagation();
+  const n = nodes[id];
+  if (!n?.parentId) return;
+  const gp = nodes[n.parentId]?.parentId;
+  if (gp === undefined || gp === null) return;
+  n.parentId = gp;
+  renderView();
+}
+
+function doDemote(id, e) {
+  e.stopPropagation();
+  const n = nodes[id];
+  if (!n?.parentId) return;
+  const siblings = kids(n.parentId).filter(s => s.id !== id);
+  if (!siblings.length) return;
+  siblings.sort((a, b) => kids(b.id).length - kids(a.id).length);
+  n.parentId = siblings[0].id;
+  renderView();
+}
+
+function doStartMove(id, e) {
+  e.stopPropagation();
+  moveSource = (moveSource === id) ? null : id;
+  renderView();
+}
+
+function doCancelMove() { moveSource = null; renderView(); }
+
+function doPlaceUnder(targetId, e) {
+  e.stopPropagation();
+  if (!moveSource) return;
+  nodes[moveSource].parentId = targetId;
+  moveSource = null;
+  renderView();
+}
+
+function doMakeT1(id, e) {
+  e.stopPropagation();
+  const n = nodes[id];
+  if (!n) return;
+  n.parentId = null;
+  renderView();
+}
+
+function doRemove(id, e) {
+  e.stopPropagation();
+  const n = nodes[id];
+  if (!n) return;
+  Object.values(nodes).forEach(m => {
+    if (m.parentId === id && !m.removed) {
+      m.parentId = n.parentId;
+    }
+  });
+  n.removed = true;
+  renderView();
+}
+
+function doRestore(id, e) {
+  if (e) e.stopPropagation();
+  const n = nodes[id];
+  if (!n) return;
+  n.removed = false;
+  if (n.parentId && nodes[n.parentId]?.removed) {
+    const root = Object.values(nodes).find(r => !r.parentId && !r.removed);
+    if (root) n.parentId = root.id;
+  }
+  renderView();
+}
+
+// ─── Rendering ──────────────────────────────────────────────────────────────
+
+function renderNode(n, d) {
+  const tier = d + 1;
+  const k = kids(n.id);
+  const inMove = moveSource !== null;
+  const isSource = inMove && n.id === moveSource;
+  const desc = inMove ? descendants(moveSource) : null;
+  const isTarget = inMove && !isSource && !desc?.has(n.id) && n.id !== moveSource;
+  const isGray = inMove && !isSource && !isTarget;
+
+  const tag = n.tag && !n.tag.startsWith('?') ? n.tag : '';
+  const lvl = n.level != null ? `<span class="member-level">K${n.level}</span>` : '';
+
+  let btns = '';
+  if (inMove) {
+    if (isSource) {
+      btns = `<button class="action-btn cancel" onclick="doCancelMove()">✕</button>`;
+    } else if (isTarget) {
+      btns = `<button class="action-btn place" onclick="doPlaceUnder('${n.id}',event)">← Here</button>`;
+    }
+  } else if (d > 0) {
+    const canPromote = d >= 2;
+    const isT2 = d === 1;
+    const hasSib = kids(nodes[n.id].parentId).some(s => s.id !== n.id);
+    if (isT2)
+      btns += `<button class="action-btn make-t1" onclick="doMakeT1('${n.id}',event)" title="Promote to T1 (new root)">★ T1</button>`;
+    else if (canPromote)
+      btns += `<button class="action-btn promote" onclick="doPromote('${n.id}',event)" title="Move up one tier">↑</button>`;
+    if (hasSib)
+      btns += `<button class="action-btn demote" onclick="doDemote('${n.id}',event)" title="Move down under a sibling">↓</button>`;
+    btns += `<button class="action-btn pick" onclick="doStartMove('${n.id}',event)" title="Move anywhere">⇅</button>`;
+    btns += `<button class="action-btn remove" onclick="doRemove('${n.id}',event)" title="Remove member">✕</button>`;
+  }
+
+  const cls = [
+    'member-card', k.length ? 'has-children' : 'no-children',
+    isSource ? 'moving'     : '',
+    isTarget ? 'can-target' : '',
+    isGray   ? 'disabled'   : '',
+  ].filter(Boolean).join(' ');
+
+  const clk = (!inMove || isSource) ? 'onclick="toggleNode(this)"' : '';
+  const card = `<div class="${cls}" data-tier="${tier}" ${clk}>
+    <span class="tier-badge tb-${tier}">T${tier}</span>
+    <span class="member-name">${n.name}</span>
+    ${tag ? `<span class="member-tag">[${tag}]</span>` : ''}
+    ${lvl}
+    ${btns ? `<span class="action-btns" onclick="event.stopPropagation()">${btns}</span>` : ''}
+  </div>`;
+
+  if (!k.length) return `<li>${card}</li>`;
+  return `<li>${card}<ul class="children open">${k.map(c => renderNode(c, d + 1)).join('')}</ul></li>`;
+}
+
+function renderRemovedPanel() {
+  const panel = document.getElementById('removed-panel');
+  const removed = Object.values(nodes).filter(n => n.removed && isVisibleAlliance(n.tag));
+  if (!removed.length) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  const chips = removed.map(m =>
+    `<span class="removed-chip">${m.name} (K${m.level})
+      <button onclick="doRestore('${m.id}',event)" title="Restore">↩</button>
+    </span>`
+  ).join('');
+  panel.innerHTML = `<div class="removed-panel">
+    <h3>Removed (${removed.length})</h3>
+    <div class="removed-list">${chips}</div>
+  </div>`;
+}
+
+function renderView() {
+  const container = document.getElementById('view-container');
+  const active = Object.values(nodes).filter(n => !n.removed && isVisibleAlliance(n.tag));
+  const roots = active.filter(n => {
+    if (!n.parentId || !nodes[n.parentId] || nodes[n.parentId].removed) return true;
+    if (!isVisibleAlliance(nodes[n.parentId].tag)) return true;
+    return false;
+  });
+
+  const banner = moveSource
+    ? `<div class="move-banner">Moving <strong>${nodes[moveSource]?.name}</strong>
+         — click <strong>← Here</strong> on the desired new parent
+         <button onclick="doCancelMove()">✕ Cancel</button></div>`
+    : '';
+
+  container.innerHTML = banner +
+    `<ul class="tree">${roots.map(m => renderNode(m, 0)).join('')}</ul>`;
+
+  const allActive = Object.values(nodes).filter(n => !n.removed);
+  const visibleActive = allActive.filter(n => isVisibleAlliance(n.tag));
+  const removed = Object.values(nodes).filter(n => n.removed);
+  const tierCounts = [0,0,0,0,0];
+  visibleActive.forEach(n => {
+    const d = depth(n.id);
+    if (d >= 0 && d <= 3) tierCounts[d + 1]++;
+  });
+
+  const oathsCount = allActive.filter(n => n.tag === 'OATHS').length;
+  const clashCount = allActive.filter(n => n.tag === 'CLASH').length;
+
+  const pills = [
+    ['Active', visibleActive.length],
+  ];
+  if (currentAlliance === 'ALL') {
+    pills.push(['OATHS', oathsCount]);
+    pills.push(['CLASH', clashCount]);
+  }
+  pills.push(['T2 Bannermen', tierCounts[1]]);
+  pills.push(['T3 Officers', tierCounts[2]]);
+  pills.push(['T4 Members', tierCounts[3] + tierCounts[4]]);
+  if (removed.length > 0) pills.push(['Removed', removed.length, true]);
+
+  document.getElementById('stats-row').innerHTML = pills
+    .filter(Boolean).map(([label, val, isRemoved]) =>
+      `<div class="stat-pill${isRemoved ? ' removed' : ''}">${label}: <strong>${val}</strong></div>`
+    ).join('');
+
+  renderRemovedPanel();
+  applyFilters();
+}
+
+function toggleNode(card) {
+  const children = card.nextElementSibling;
+  if (!children || !children.classList.contains('children')) return;
+  card.classList.toggle('open');
+  children.classList.toggle('open');
+}
+
+function applyFilters() {
+  const container = document.getElementById('view-container');
+  const q = searchQuery.toLowerCase().trim();
+
+  container.querySelectorAll('[data-tier]').forEach(el => {
+    const t = +el.dataset.tier;
+    if (el.classList.contains('member-card')) {
+      el.closest('li').classList.toggle('tier-hidden', hiddenTiers.has(t));
+    }
+  });
+
+  if (q) {
+    container.classList.add('search-dim');
+    container.querySelectorAll('.member-name').forEach(el => {
+      const matches = el.textContent.toLowerCase().includes(q);
+      el.classList.toggle('highlight', matches);
+      if (matches) {
+        let node = el.closest('li');
+        while (node) {
+          const ch = node.querySelector('.children');
+          const card = node.querySelector('.member-card');
+          if (ch && card) { ch.classList.add('open'); card.classList.add('open'); }
+          node = node.parentElement && node.parentElement.closest('li');
+        }
+      }
+    });
+  } else {
+    container.classList.remove('search-dim');
+    container.querySelectorAll('.member-name').forEach(el => el.classList.remove('highlight'));
+  }
+}
+
+// ─── Controls ───────────────────────────────────────────────────────────────
+
+document.getElementById('expand-all').addEventListener('click', () => {
+  document.querySelectorAll('.children').forEach(c => c.classList.add('open'));
+  document.querySelectorAll('.member-card.has-children').forEach(c => c.classList.add('open'));
+});
+
+document.getElementById('collapse-all').addEventListener('click', () => {
+  document.querySelectorAll('.children').forEach(c => c.classList.remove('open'));
+  document.querySelectorAll('.member-card.has-children').forEach(c => c.classList.remove('open'));
+  document.querySelectorAll('.tree > li > ul.children').forEach(c => {
+    c.classList.add('open');
+    const card = c.previousElementSibling;
+    if (card) card.classList.add('open');
+  });
+});
+
+document.querySelectorAll('.tier-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = +btn.dataset.tier;
+    if (hiddenTiers.has(t)) { hiddenTiers.delete(t); btn.classList.remove('dimmed'); }
+    else { hiddenTiers.add(t); btn.classList.add('dimmed'); }
+    applyFilters();
+  });
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  applyFilters();
+});
+
+// ─── Alliance tab filtering ────────────────────────────────────────────────
+
+document.querySelectorAll('.alliance-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    currentAlliance = tab.dataset.alliance;
+    document.querySelectorAll('.alliance-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    moveSource = null;
+    renderView();
+  });
+});
+
+// ─── Export / Reset ─────────────────────────────────────────────────────────
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const active = Object.values(nodes).filter(n => !n.removed);
+  const removed = Object.values(nodes).filter(n => n.removed);
+
+  const exported = active.map(n => {
+    let lid = n.parentId;
+    while (lid && nodes[lid]?.removed) lid = nodes[lid].parentId;
+    return { id: n.id, name: n.name, level: n.level, tag: n.tag, liege_id: lid };
+  });
+
+  const blob = new Blob([JSON.stringify({
+    active: exported,
+    removed: removed.map(n => ({ id: n.id, name: n.name, level: n.level }))
+  }, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `oaths_clash_roster_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  initState();
+  currentAlliance = 'ALL';
+  document.querySelectorAll('.alliance-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.alliance-tab[data-alliance="ALL"]').classList.add('active');
+  renderView();
+});
+
+// ─── Init ───────────────────────────────────────────────────────────────────
+initState();
+renderView();
+</script>
+</body>
+</html>
